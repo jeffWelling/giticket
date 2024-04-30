@@ -26,11 +26,15 @@ func (action *ActionInit) Execute() {
 		panic(err)
 	}
 
+	// Create a blob with the filecontents of "0"
 	blobOid, err := repo.CreateBlobFromBuffer([]byte("0"))
 	if err != nil {
 		panic(err)
 	}
 
+	// This is a root commit, and we're adding a directory with a file in it,
+	// so we need two treeBuilders. One for the root tree of the commit, and
+	// one for the directory
 	treeBuilderRoot, err := repo.TreeBuilder()
 	if err != nil {
 		panic(err)
@@ -42,27 +46,32 @@ func (action *ActionInit) Execute() {
 	defer treeBuilderRoot.Free()
 	defer treeBuilderGiticket.Free()
 
+	// Create a file named next_ticket_id under the directory we will create
 	err = treeBuilderGiticket.Insert("next_ticket_id", blobOid, git.FilemodeBlob)
 	if err != nil {
 		panic(err)
 	}
 
+	// Write the tree for the directory and get the tree id
 	giticketTreeID, err := treeBuilderGiticket.Write()
 	if err != nil {
 		panic(err)
 	}
 
+	// Add the tree ID for the directory named ".giticket" to the root tree
+	// builder
 	err = treeBuilderRoot.Insert(".giticket", giticketTreeID, git.FilemodeTree)
 	if err != nil {
 		panic(err)
 	}
 
-	// Write the tree to the repository
+	// Write the root tree to the repository
 	treeOid, err := treeBuilderRoot.Write()
 	if err != nil {
 		panic(err)
 	}
 
+	// Lookup the tree ID to get the tree we just created
 	tree, err := repo.LookupTree(treeOid)
 	if err != nil {
 		panic(err)
@@ -82,7 +91,6 @@ func (action *ActionInit) Execute() {
 		fmt.Println("Error retrieving user name:", err)
 		panic(err)
 	}
-
 	email, err := cfg.LookupString("user.email")
 	if err != nil {
 		fmt.Println("Error retrieving user email:", err)
@@ -96,19 +104,20 @@ func (action *ActionInit) Execute() {
 		When:  time.Now(),
 	}
 
+	// Raise shields, weapons to maximum!
 	oid, err := repo.CreateCommit("refs/heads/giticket", author, author, "Initial commit", tree)
 	if err != nil {
 		panic(err)
 	}
 
-	// Lookup the commit from its OID
+	// Lookup the commit from its OID, to set the branch
 	commit, err := repo.LookupCommit(oid)
 	if err != nil {
 		panic(err)
 	}
 	defer commit.Free()
 
-	// Create an orphan branch called giticket
+	// Create branch called giticket pointing to this commit
 	_, err = repo.CreateBranch("giticket", commit, true)
 	if err != nil {
 		panic(err)
