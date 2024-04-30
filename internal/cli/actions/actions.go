@@ -5,6 +5,7 @@ var registryActions map[string]ActionInterface
 type ActionInterface interface {
 	Execute()
 	Help()
+	InitFlags()
 }
 
 // registerAction() takes an action_name and an action_plugin

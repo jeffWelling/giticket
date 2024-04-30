@@ -2,7 +2,6 @@ package actions
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	git "github.com/jeffwelling/git2go/v37"
@@ -24,51 +23,95 @@ func (action *ActionInit) Execute() {
 	// Open an existing repository in the current directory
 	repo, err := git.OpenRepository(".")
 	if err != nil {
-		log.Fatalf("Failed to open repo: %v", err)
+		panic(err)
 	}
 
-	// Create an index (staging area)
-	index, err := repo.Index()
+	blobOid, err := repo.CreateBlobFromBuffer([]byte("0"))
 	if err != nil {
-		log.Fatalf("Failed to get repository index: %v", err)
+		panic(err)
 	}
-	defer index.Free()
 
-	// Write an empty tree from the index
-	treeID, err := index.WriteTree()
+	treeBuilderRoot, err := repo.TreeBuilder()
 	if err != nil {
-		log.Fatalf("Failed to write tree: %v", err)
+		panic(err)
 	}
-
-	// Get the tree object from its ID
-	tree, err := repo.LookupTree(treeID)
+	treeBuilderGiticket, err := repo.TreeBuilder()
 	if err != nil {
-		log.Fatalf("Failed to get tree: %v", err)
+		panic(err)
 	}
-	defer tree.Free()
+	defer treeBuilderRoot.Free()
+	defer treeBuilderGiticket.Free()
 
-	// Now create a commit with no parents (root commit)
+	err = treeBuilderGiticket.Insert("next_ticket_id", blobOid, git.FilemodeBlob)
+	if err != nil {
+		panic(err)
+	}
+
+	giticketTreeID, err := treeBuilderGiticket.Write()
+	if err != nil {
+		panic(err)
+	}
+
+	err = treeBuilderRoot.Insert(".giticket", giticketTreeID, git.FilemodeTree)
+	if err != nil {
+		panic(err)
+	}
+
+	// Write the tree to the repository
+	treeOid, err := treeBuilderRoot.Write()
+	if err != nil {
+		panic(err)
+	}
+
+	tree, err := repo.LookupTree(treeOid)
+	if err != nil {
+		panic(err)
+	}
+
+	// Load the configuration which merges global, system, and local configs
+	cfg, err := repo.Config()
+	if err != nil {
+		fmt.Println("Error accessing config:", err)
+		panic(err)
+	}
+	defer cfg.Free()
+
+	// Retrieve user's name and email from the configuration
+	name, err := cfg.LookupString("user.name")
+	if err != nil {
+		fmt.Println("Error retrieving user name:", err)
+		panic(err)
+	}
+
+	email, err := cfg.LookupString("user.email")
+	if err != nil {
+		fmt.Println("Error retrieving user email:", err)
+		panic(err)
+	}
+
+	// Create a new commit on the branch
 	author := &git.Signature{
-		Name:  "Your Name",
-		Email: "your.email@example.com",
+		Name:  name,
+		Email: email,
 		When:  time.Now(),
 	}
+
 	oid, err := repo.CreateCommit("refs/heads/giticket", author, author, "Initial commit", tree)
 	if err != nil {
-		log.Fatalf("Failed to create commit: %v", err)
+		panic(err)
 	}
 
 	// Lookup the commit from its OID
 	commit, err := repo.LookupCommit(oid)
 	if err != nil {
-		log.Fatalf("Failed to find commit: %v", err)
+		panic(err)
 	}
 	defer commit.Free()
 
 	// Create an orphan branch called giticket
 	_, err = repo.CreateBranch("giticket", commit, true)
 	if err != nil {
-		log.Fatalf("Failed to create branch: %v", err)
+		panic(err)
 	}
 }
 
@@ -77,3 +120,6 @@ func (action *ActionInit) Help() {
 	fmt.Println("  init - Initialize giticket")
 	fmt.Println("    eg: giticket init")
 }
+
+// InitFlags()
+func (action *ActionInit) InitFlags() {}
