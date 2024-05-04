@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	git "github.com/jeffwelling/git2go/v37"
 	"gopkg.in/yaml.v2"
@@ -30,49 +31,46 @@ type Comment struct {
 	Author  string
 }
 
-func ReadAndIncrementTicketID(repo *git.Repository, branchName, filePath string, treeBuilder *git.TreeBuilder) (int, error) {
-	branch, err := repo.LookupBranch(branchName, git.BranchLocal)
-	if err != nil {
-		return 0, err
-	}
-
-	commit, err := repo.LookupCommit(branch.Target())
-	if err != nil {
-		return 0, err
-	}
+// Return the value of ".giticket/next_ticket_id" from the given commit as an
+// int, or returns 0 and an error. Make sure to write the incremented value back
+// things to ".giticket/next_ticket_id" in the same commit. Repo is required to
+// lookup treeIDs
+func ReadNextTicketID(repo *git.Repository, commit *git.Commit) (int, error) {
 
 	tree, err := commit.Tree()
 	if err != nil {
 		return 0, err
 	}
+	defer tree.Free()
 
-	entry, err := tree.EntryByPath(filePath)
+	giticketTreeEntry, err := tree.EntryByPath(".giticket")
 	if err != nil {
 		return 0, err
 	}
 
-	blob, err := repo.LookupBlob(entry.Id)
+	// Lookup giticketTreeEntry
+	giticketTree, err := repo.LookupTree(giticketTreeEntry.Id)
+	if err != nil {
+		return 0, err
+	}
+	defer giticketTree.Free()
+
+	NTIDEntry, err := giticketTree.EntryByPath("next_ticket_id")
 	if err != nil {
 		return 0, err
 	}
 
-	s := strings.TrimSpace(string(blob.Contents()))
+	NTIDBlob, err := repo.LookupBlob(NTIDEntry.Id)
+	if err != nil {
+		return 0, err
+	}
+	defer NTIDBlob.Free()
+
+	// read value of blob as int
+	s := strings.TrimSpace(string(NTIDBlob.Contents()))
 
 	// Convert string s into int i
 	i, err := strconv.Atoi(s)
-	if err != nil {
-		return 0, err
-	}
-
-	// Increment i
-	i++
-
-	blobOid, err := repo.CreateBlobFromBuffer([]byte(strconv.Itoa(i)))
-	if err != nil {
-		return 0, err
-	}
-
-	err = treeBuilder.Insert(filePath, blobOid, git.FilemodeBlob)
 	if err != nil {
 		return 0, err
 	}
@@ -101,4 +99,35 @@ func (t *Ticket) TicketToYaml() []byte {
 
 func PrintParameterMissing(param string) {
 	fmt.Printf("A required parameter was not provided, check the '--help' output for the action for more details. Missing parameter: %s\n", param)
+}
+
+func GetAuthor(repo *git.Repository) *git.Signature {
+	// Load the configuration which merges global, system, and local configs
+	cfg, err := repo.Config()
+	if err != nil {
+		fmt.Println("Error accessing config:", err)
+		panic(err)
+	}
+	defer cfg.Free()
+
+	// Retrieve user's name and email from the configuration
+	name, err := cfg.LookupString("user.name")
+	if err != nil {
+		fmt.Println("Error retrieving user name:", err)
+		panic(err)
+	}
+	email, err := cfg.LookupString("user.email")
+	if err != nil {
+		fmt.Println("Error retrieving user email:", err)
+		panic(err)
+	}
+
+	// Create a new commit on the branch
+	author := &git.Signature{
+		Name:  name,
+		Email: email,
+		When:  time.Now(),
+	}
+
+	return author
 }

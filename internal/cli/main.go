@@ -15,6 +15,7 @@ func Exec() {
 	// Set flags
 	helpFlag := flag.Bool("help", false, "Print usage info and detailed help")
 	versionFlag := flag.Bool("version", false, "Print version info")
+	debugFlag := flag.Bool("debug", false, "Print debug info")
 
 	// Parse args
 	flag.Parse()
@@ -22,6 +23,9 @@ func Exec() {
 	// Parse the action
 	action := getAction(flag.Args())
 	if action == "" {
+		if *debugFlag {
+			fmt.Println("No action given, and no parameters given. Nothing to do.")
+		}
 		// No action, print general usage if help flag used
 		if *helpFlag {
 			printGeneralUsage()
