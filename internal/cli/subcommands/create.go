@@ -89,14 +89,12 @@ func (subcommand *SubcommandCreate) InitFlags(args []string) {
 
 	// Handle comments separately to parse them into a slice of Comments
 	if *commentsFlag != "" {
-		fmt.Println("Comments found, comments: ", *commentsFlag)
 		subcommand.next_comment_id = 0
 		var comments []ticket.Comment
 		err := json.Unmarshal([]byte(*commentsFlag), &comments)
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("Comments parsed: ", comments)
 		for i := range comments {
 			comments[i].ID = subcommand.next_comment_id
 			subcommand.next_comment_id++
