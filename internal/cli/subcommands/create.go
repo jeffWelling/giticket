@@ -12,30 +12,31 @@ import (
 	git "github.com/jeffwelling/git2go/v37"
 )
 
-// init() is used to register this action
+// init() is used to register this subcommand
 func init() {
-	action := new(SubcommandCreate)
-	registerAction("create", action)
+	subcommand := new(SubcommandCreate)
+	registerSubcommand("create", subcommand)
 }
 
 type SubcommandCreate struct {
-	title       string
-	description string
-	labels      []string
-	priority    int
-	severity    int
-	status      string
-	id          int
-	comments    []ticket.Comment
-	debug       bool
-	flagset     *flag.FlagSet
+	title           string
+	description     string
+	labels          []string
+	priority        int
+	severity        int
+	status          string
+	id              int
+	comments        []ticket.Comment
+	debug           bool
+	flagset         *flag.FlagSet
+	next_comment_id int
 }
 
-// Execute() is called when this action is invoked
-func (action *SubcommandCreate) Execute() {
+// Execute() is called when this subcommand is invoked
+func (subcommand *SubcommandCreate) Execute() {
 	branchName := "giticket"
 
-	if action.debug {
+	if subcommand.debug {
 		fmt.Println("Opening repository '.'")
 	}
 	repo, err := git.OpenRepository(".")
@@ -43,13 +44,13 @@ func (action *SubcommandCreate) Execute() {
 		panic(err)
 	}
 
-	_, filename := createTicketAndDirectories(repo, branchName, action)
+	_, filename := createTicketAndDirectories(repo, branchName, subcommand)
 	fmt.Println("Ticket created: ", filename)
 	return
 }
 
-// Help() prints help for this action
-func (action *SubcommandCreate) Help() {
+// Help() prints help for this subcommand
+func (subcommand *SubcommandCreate) Help() {
 	fmt.Println("  create - Create a new ticket")
 	fmt.Println("    eg: giticket create [parameters]")
 	fmt.Println("    parameters:")
@@ -63,19 +64,19 @@ func (action *SubcommandCreate) Help() {
 }
 
 // InitFlags()
-func (action *SubcommandCreate) InitFlags(args []string) {
-	action.flagset = flag.NewFlagSet("create", flag.ExitOnError)
+func (subcommand *SubcommandCreate) InitFlags(args []string) {
+	subcommand.flagset = flag.NewFlagSet("create", flag.ExitOnError)
 
-	action.flagset.BoolVar(&action.debug, "debug", false, "Print debug info")
-	action.flagset.StringVar(&action.title, "title", "", "Title of the ticket to create")
-	action.flagset.StringVar(&action.description, "description", "", "Description of the ticket to create")
-	labelsFlag := action.flagset.String("labels", "", "Comma separated list of labels to apply to the ticket")
-	action.flagset.IntVar(&action.priority, "priority", 1, "Priority of the ticket")
-	action.flagset.IntVar(&action.severity, "severity", 1, "Severity of the ticket")
-	action.flagset.StringVar(&action.status, "status", "new", "Status of the ticket")
-	commentsFlag := action.flagset.String("comments", "", "Comma separated list of comments to add to the ticket")
+	subcommand.flagset.BoolVar(&subcommand.debug, "debug", false, "Print debug info")
+	subcommand.flagset.StringVar(&subcommand.title, "title", "", "Title of the ticket to create")
+	subcommand.flagset.StringVar(&subcommand.description, "description", "", "Description of the ticket to create")
+	labelsFlag := subcommand.flagset.String("labels", "", "Comma separated list of labels to apply to the ticket")
+	subcommand.flagset.IntVar(&subcommand.priority, "priority", 1, "Priority of the ticket")
+	subcommand.flagset.IntVar(&subcommand.severity, "severity", 1, "Severity of the ticket")
+	subcommand.flagset.StringVar(&subcommand.status, "status", "new", "Status of the ticket")
+	commentsFlag := subcommand.flagset.String("comments", "", "Comma separated list of comments to add to the ticket")
 
-	action.flagset.Parse(args)
+	subcommand.flagset.Parse(args)
 
 	// Handle labels separately to split them into a slice
 	if *labelsFlag != "" {
@@ -83,23 +84,28 @@ func (action *SubcommandCreate) InitFlags(args []string) {
 		for i, label := range labels {
 			labels[i] = strings.TrimSpace(label)
 		}
-		action.labels = labels
+		subcommand.labels = labels
 	}
 
 	// Handle comments separately to parse them into a slice of Comments
 	if *commentsFlag != "" {
 		fmt.Println("Comments found, comments: ", *commentsFlag)
+		subcommand.next_comment_id = 0
 		var comments []ticket.Comment
 		err := json.Unmarshal([]byte(*commentsFlag), &comments)
 		if err != nil {
 			panic(err)
 		}
 		fmt.Println("Comments parsed: ", comments)
-		action.comments = comments
+		for i := range comments {
+			comments[i].ID = subcommand.next_comment_id
+			subcommand.next_comment_id++
+		}
+		subcommand.comments = comments
 	}
 
 	// Check for required parameters
-	if action.title == "" {
+	if subcommand.title == "" {
 		ticket.PrintParameterMissing("title")
 		return
 	}
@@ -107,15 +113,15 @@ func (action *SubcommandCreate) InitFlags(args []string) {
 
 // ticketFilename() returns the ticket title encoded as a filename prefixed with
 // the ticket ID
-func (action *SubcommandCreate) ticketFilename() string {
+func (subcommand *SubcommandCreate) ticketFilename() string {
 	// turn spaces into underscores
-	title := strings.ReplaceAll(action.title, " ", "_")
-	return fmt.Sprintf("%d_%s", action.id, title)
+	title := strings.ReplaceAll(subcommand.title, " ", "_")
+	return fmt.Sprintf("%d_%s", subcommand.id, title)
 }
 
-func createTicketAndDirectories(repo *git.Repository, branchName string, action *SubcommandCreate) (*git.Oid, string) {
+func createTicketAndDirectories(repo *git.Repository, branchName string, subcommand *SubcommandCreate) (*git.Oid, string) {
 	// Find the branch and its target commit
-	if action.debug {
+	if subcommand.debug {
 		fmt.Println("looking up branch: ", branchName)
 	}
 	branch, err := repo.LookupBranch(branchName, git.BranchLocal)
@@ -124,7 +130,7 @@ func createTicketAndDirectories(repo *git.Repository, branchName string, action 
 	}
 
 	// Lookup the commit the branch references
-	if action.debug {
+	if subcommand.debug {
 		fmt.Println("looking up commit: ", branch.Target())
 	}
 	parentCommit, err := repo.LookupCommit(branch.Target())
@@ -137,23 +143,23 @@ func createTicketAndDirectories(repo *git.Repository, branchName string, action 
 	if err != nil {
 		panic(err)
 	}
-	if action.debug {
+	if subcommand.debug {
 		fmt.Println("reading next ticket ID from .giticket/next_ticket_id: ", ticketID)
 	}
 
 	// Increment ticketID and write it as a blob
 	i := ticketID + 1
-	if action.debug {
+	if subcommand.debug {
 		fmt.Println("incrementing next ticket ID in .giticket/next_ticket_id, is now: ", i)
 	}
 	NTIDBlobOID, err := repo.CreateBlobFromBuffer([]byte(strconv.Itoa(i)))
-	if action.debug {
+	if subcommand.debug {
 		fmt.Println("NTIDBlobOID: ", NTIDBlobOID)
 	}
 
 	// Lookup the tree from the previous commit, we need this to build a tree
 	// that includes the files from the previous commit.
-	if action.debug {
+	if subcommand.debug {
 		fmt.Println("looking up tree from parent commit, tree ID:", parentCommit.TreeId())
 	}
 	previousCommitTree, err := parentCommit.Tree()
@@ -164,7 +170,7 @@ func createTicketAndDirectories(repo *git.Repository, branchName string, action 
 
 	// Create a TreeBuilder from the previous commit's tree, so that we can
 	// update it with our changes to the .giticket directory
-	if action.debug {
+	if subcommand.debug {
 		fmt.Println("creating root tree builder from previous commit")
 	}
 	rootTreeBuilder, err := repo.TreeBuilderFromTree(previousCommitTree)
@@ -175,13 +181,13 @@ func createTicketAndDirectories(repo *git.Repository, branchName string, action 
 
 	// Get the TreeEntry for ".giticket" from the previous commit so we can get
 	// the tree for .giticket
-	if action.debug {
+	if subcommand.debug {
 		fmt.Println("looking up tree entry for .giticket: ", previousCommitTree.EntryByName(".giticket").Id)
 	}
 	giticketTreeEntry := previousCommitTree.EntryByName(".giticket")
 
 	// Lookup tree for giticket
-	if action.debug {
+	if subcommand.debug {
 		fmt.Println("looking up tree for .giticket: ", giticketTreeEntry.Id)
 	}
 	giticketTree, err := repo.LookupTree(giticketTreeEntry.Id)
@@ -193,7 +199,7 @@ func createTicketAndDirectories(repo *git.Repository, branchName string, action 
 	// Create a TreeBuilder from the previous tree for giticket so we can add a
 	// ticket under .gititcket/tickets and change the value of
 	// .giticket/next_ticket_id
-	if action.debug {
+	if subcommand.debug {
 		fmt.Println("creating tree builder for .giticket tree: ", giticketTree)
 	}
 	giticketTreeBuilder, err := repo.TreeBuilderFromTree(giticketTree)
@@ -205,7 +211,7 @@ func createTicketAndDirectories(repo *git.Repository, branchName string, action 
 	// Insert the blob for next_ticket_id into the TreeBuilder for giticket
 	// This essentially saves the file to .giticket/next_ticket_id, but we then need to
 	// save the directory to the parent, all the way up to the commit.
-	if action.debug {
+	if subcommand.debug {
 		fmt.Println("inserting next ticket ID into .giticket/next_ticket_id: ", NTIDBlobOID)
 	}
 	err = giticketTreeBuilder.Insert("next_ticket_id", NTIDBlobOID, git.FilemodeBlob)
@@ -220,7 +226,7 @@ func createTicketAndDirectories(repo *git.Repository, branchName string, action 
 
 		// Get a TreeBuilder for .giticket/tickets so we can add the ticket to that
 		// directory
-		if action.debug {
+		if subcommand.debug {
 			fmt.Println("creating empty tree builder for .giticket/tickets")
 		}
 		giticketTicketsTreeBuilder, err = repo.TreeBuilder()
@@ -229,7 +235,7 @@ func createTicketAndDirectories(repo *git.Repository, branchName string, action 
 		}
 		defer giticketTicketsTreeBuilder.Free()
 	} else {
-		if action.debug {
+		if subcommand.debug {
 			fmt.Println("looking up tree for .giticket/tickets: ", _giticketTicketsTreeID.Id)
 		}
 		giticketTicketsTree, err := repo.LookupTree(_giticketTicketsTreeID.Id)
@@ -238,8 +244,8 @@ func createTicketAndDirectories(repo *git.Repository, branchName string, action 
 		}
 		defer giticketTicketsTree.Free()
 
-		if action.debug {
-			fmt.Println("creating tree builder for .giticket/tickets tree: ", giticketTicketsTree.Id)
+		if subcommand.debug {
+			fmt.Println("creating tree builder for .giticket/tickets tree: ", giticketTicketsTree.Id())
 		}
 		giticketTicketsTreeBuilder, err = repo.TreeBuilderFromTree(giticketTicketsTree)
 		if err != nil {
@@ -247,24 +253,25 @@ func createTicketAndDirectories(repo *git.Repository, branchName string, action 
 		}
 	}
 
-	if action.debug {
+	if subcommand.debug {
 		fmt.Println("creating and populating ticket")
 	}
 	// Craft the ticket
 	t := ticket.Ticket{}
 	t.Created = time.Now().Unix()
-	t.Title = action.title
-	t.Description = action.description
-	t.Labels = action.labels
-	t.Priority = action.priority
-	t.Severity = action.severity
-	t.Status = action.status
+	t.Title = subcommand.title
+	t.Description = subcommand.description
+	t.Labels = subcommand.labels
+	t.Priority = subcommand.priority
+	t.Severity = subcommand.severity
+	t.Status = subcommand.status
 	t.ID = ticketID
-	t.Comments = action.comments
+	t.Comments = subcommand.comments
+	t.NextCommentID = subcommand.next_comment_id
 	// FIXME Add a way to parse comments from initial ticket creation
 
 	// Write ticket
-	if action.debug {
+	if subcommand.debug {
 		fmt.Println("writing ticket: ", string(t.TicketToYaml()))
 	}
 	ticketBlobOID, err := repo.CreateBlobFromBuffer(t.TicketToYaml())
@@ -273,7 +280,7 @@ func createTicketAndDirectories(repo *git.Repository, branchName string, action 
 	}
 
 	// Add ticket to .giticket/tickets
-	if action.debug {
+	if subcommand.debug {
 		fmt.Println("adding ticket to .giticket/tickets: ", ticketBlobOID)
 	}
 	err = giticketTicketsTreeBuilder.Insert(t.TicketFilename(), ticketBlobOID, git.FilemodeBlob)
@@ -286,13 +293,13 @@ func createTicketAndDirectories(repo *git.Repository, branchName string, action 
 	if err != nil {
 		panic(err)
 	}
-	if action.debug {
+	if subcommand.debug {
 		fmt.Println("saving .giticket/tickets: ", giticketTicketsTreeID.String())
 	}
 
 	// Add 'ticket' directory to '.giticket' TreeBuilder, to update the
 	// .giticket directory with the new tree for the updated tickets directory
-	if action.debug {
+	if subcommand.debug {
 		fmt.Println("adding ticket directory to .giticket: ", giticketTicketsTreeID)
 	}
 	err = giticketTreeBuilder.Insert("tickets", giticketTicketsTreeID, git.FilemodeTree)
@@ -304,12 +311,12 @@ func createTicketAndDirectories(repo *git.Repository, branchName string, action 
 	if err != nil {
 		panic(err)
 	}
-	if action.debug {
+	if subcommand.debug {
 		fmt.Println("saving .giticket tree to root tree: ", giticketTreeID.String())
 	}
 
 	// Update the root tree builder with the new .giticket directory
-	if action.debug {
+	if subcommand.debug {
 		fmt.Println("updating root tree with: " + giticketTreeID.String())
 	}
 	err = rootTreeBuilder.Insert(".giticket", giticketTreeID, git.FilemodeTree)
@@ -319,7 +326,7 @@ func createTicketAndDirectories(repo *git.Repository, branchName string, action 
 
 	// Save the new root tree and get the ID so we can lookup the tree for the
 	// commit
-	if action.debug {
+	if subcommand.debug {
 		fmt.Println("saving root tree")
 	}
 	rootTreeBuilderID, err := rootTreeBuilder.Write()
@@ -328,7 +335,7 @@ func createTicketAndDirectories(repo *git.Repository, branchName string, action 
 	}
 
 	// Lookup the tree so we can use it in the commit
-	if action.debug {
+	if subcommand.debug {
 		fmt.Println("lookup root tree for commit: ", rootTreeBuilderID.String())
 	}
 	rootTree, err := repo.LookupTree(rootTreeBuilderID)
@@ -338,13 +345,13 @@ func createTicketAndDirectories(repo *git.Repository, branchName string, action 
 	defer rootTree.Free()
 
 	// Get author data by reading .git configs
-	if action.debug {
+	if subcommand.debug {
 		fmt.Println("getting author data")
 	}
 	author := ticket.GetAuthor(repo)
 
 	// commit and update 'giticket' branch
-	if action.debug {
+	if subcommand.debug {
 		fmt.Println("creating commit")
 	}
 	commitID, err := repo.CreateCommit("refs/heads/giticket", author, author, "Creating ticket "+t.TicketFilename(), rootTree, parentCommit)
@@ -355,6 +362,6 @@ func createTicketAndDirectories(repo *git.Repository, branchName string, action 
 	return commitID, t.TicketFilename()
 }
 
-func createTicket(repo *git.Repository, branchName string, action *SubcommandCreate) (*git.Commit, string) {
+func createTicket(repo *git.Repository, branchName string, subcommand *SubcommandCreate) (*git.Commit, string) {
 	return nil, ""
 }

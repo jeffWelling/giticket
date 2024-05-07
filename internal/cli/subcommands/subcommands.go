@@ -11,7 +11,7 @@ type SubcommandInterface interface {
 // registerSubcommand() takes a subcommand_name and a subcommand_plugin
 // and register the action_plugin under subcommand_name. Subsequent calls
 // with the same subcommand_name will overwrite the previous registration
-func registerAction(subcommand_name string, action_plugin SubcommandInterface) {
+func registerSubcommand(subcommand_name string, action_plugin SubcommandInterface) {
 	if len(registrySubcommands) == 0 {
 		registrySubcommands = make(map[string]SubcommandInterface)
 	}

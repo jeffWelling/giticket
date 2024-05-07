@@ -18,7 +18,7 @@ type Ticket struct {
 	Severity      int
 	Status        string
 	Comments      []Comment
-	nextCommentID int
+	NextCommentID int
 
 	// Set automatically
 	ID      int
@@ -26,7 +26,7 @@ type Ticket struct {
 }
 
 type Comment struct {
-	ID      string
+	ID      int
 	Created int64
 	Body    string
 	Author  string

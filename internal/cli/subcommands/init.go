@@ -10,7 +10,7 @@ import (
 // init() is used to register this action
 func init() {
 	action := new(ActionInit)
-	registerAction("init", action)
+	registerSubcommand("init", action)
 }
 
 type ActionInit struct {
