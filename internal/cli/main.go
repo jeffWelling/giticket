@@ -1,50 +1,41 @@
 package cli
 
 import (
-	"flag"
 	"fmt"
+	"os"
+	"strings"
 
-	"github.com/jeffWelling/giticket/internal/cli/actions"
+	"github.com/jeffWelling/giticket/internal/cli/subcommands"
 )
 
 // constants
-const version = "0.0.1"
+const version = "0.0.3"
 
 func Exec() {
+	// Sanity check, are we being called with no subcommands
+	if len(os.Args) <= 1 {
+		printGeneralUsage()
+		return
+	}
 
-	// Set flags
-	helpFlag := flag.Bool("help", false, "Print usage info and detailed help")
-	versionFlag := flag.Bool("version", false, "Print version info")
-	debugFlag := flag.Bool("debug", false, "Print debug info")
+	// Parse the subcommand
+	subcommand_name := os.Args[1]
 
-	// Parse args
-	flag.Parse()
+	// If no first argument is provided, or if the first argument is a flag
+	if subcommand_name == "" || strings.HasPrefix(subcommand_name, "-") {
 
-	// Parse the action
-	action := getAction(flag.Args())
-	if action == "" {
-		if *debugFlag {
-			fmt.Println("No action given, and no parameters given. Nothing to do.")
-		}
-		// No action, print general usage if help flag used
-		if *helpFlag {
-			printGeneralUsage()
+		if subcommand_name == "--version" {
+			fmt.Println("giticket version: " + version)
 			return
 		}
 
-		// If version flag set, print version
-		if *versionFlag {
-			printVersion()
-			return
-		}
-
-		// No action and no flag set
 		printActionMissing()
 		return
 	}
 
-	// Execute
-	actions.Use(action).Execute()
+	subcommand := subcommands.Use(subcommand_name)
+	subcommand.InitFlags(os.Args[2:])
+	subcommand.Execute()
 }
 
 func printGeneralUsage() {
@@ -53,20 +44,18 @@ func printGeneralUsage() {
 	fmt.Println("Usgae: giticket {action} [parameters]")
 	fmt.Println("One action is accepted")
 	fmt.Println("Actions:")
-	availableActions := actions.ListActions()
+	availableActions := subcommands.ListSubcommand()
 	for _, action := range availableActions {
-		actions.Use(action).Help()
+		subcommands.Use(action).Help()
 	}
 	fmt.Println("Zero or more parameters are accepted, parameters include: -help, -version")
 	fmt.Println("giticket -help            will print this message")
 	fmt.Println("giticket {action} -help   will print the help for that command")
 	fmt.Println("giticket -version         will print the version of giticket")
 }
-
 func printBanner() {
 	fmt.Println("======================================")
 }
-
 func printActionMissing() {
 	printBanner()
 	fmt.Println("Warning: No action given, and no parameters given. Nothing to do.")
@@ -76,16 +65,4 @@ func printActionMissing() {
 
 func printVersion() {
 	fmt.Println("Giticket Version: " + version)
-}
-
-// getAction takes a list of strings, assumed to be the output of flags.Args()
-// It returns args[0] unless args[0] starts with '-' in which case it returns ""
-func getAction(args []string) string {
-	if len(args) == 0 {
-		return ""
-	}
-	if args[0][0] == '-' {
-		return ""
-	}
-	return args[0]
 }

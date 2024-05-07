@@ -1,4 +1,4 @@
-package actions
+package subcommands
 
 import (
 	"fmt"
@@ -131,4 +131,4 @@ func (action *ActionInit) Help() {
 }
 
 // InitFlags()
-func (action *ActionInit) InitFlags() {}
+func (action *ActionInit) InitFlags(args []string) {}

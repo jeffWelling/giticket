@@ -11,13 +11,14 @@ import (
 )
 
 type Ticket struct {
-	Title       string
-	Description string
-	Labels      []string
-	Priority    int
-	Severity    int
-	Status      string
-	Comments    []Comment
+	Title         string
+	Description   string
+	Labels        []string
+	Priority      int
+	Severity      int
+	Status        string
+	Comments      []Comment
+	nextCommentID int
 
 	// Set automatically
 	ID      int
@@ -25,7 +26,7 @@ type Ticket struct {
 }
 
 type Comment struct {
-	Id      string
+	ID      string
 	Created int64
 	Body    string
 	Author  string
