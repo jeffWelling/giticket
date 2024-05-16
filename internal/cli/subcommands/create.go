@@ -36,9 +36,7 @@ type SubcommandCreate struct {
 func (subcommand *SubcommandCreate) Execute() {
 	branchName := "giticket"
 
-	if subcommand.debug {
-		fmt.Println("Opening repository '.'")
-	}
+	DebugMessage(subcommand.debug, "Opening git repository")
 	repo, err := git.OpenRepository(".")
 	if err != nil {
 		panic(err)
@@ -78,6 +76,14 @@ func (subcommand *SubcommandCreate) InitFlags(args []string) {
 
 	subcommand.flagset.Parse(args)
 
+	// get the author
+	DebugMessage(subcommand.debug, "Opening git repository to get author")
+	repo, err := git.OpenRepository(".")
+	if err != nil {
+		panic(err)
+	}
+	author := ticket.GetAuthor(repo)
+
 	// Handle labels separately to split them into a slice
 	if *labelsFlag != "" {
 		labels := strings.Split(*labelsFlag, ",")
@@ -98,6 +104,9 @@ func (subcommand *SubcommandCreate) InitFlags(args []string) {
 		for i := range comments {
 			comments[i].ID = subcommand.next_comment_id
 			subcommand.next_comment_id++
+
+			comments[i].Created = time.Now().Unix()
+			comments[i].Author = author.Name + " <" + author.Email + ">"
 		}
 		subcommand.comments = comments
 	}
