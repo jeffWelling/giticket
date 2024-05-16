@@ -18,7 +18,7 @@ type Ticket struct {
 	Severity      int
 	Status        string
 	Comments      []Comment
-	NextCommentID int
+	NextCommentID int `yaml:"-" json:"-"`
 
 	// Set automatically
 	ID      int
