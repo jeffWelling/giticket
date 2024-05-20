@@ -26,8 +26,9 @@ func (action *ActionInit) Execute() {
 		panic(err)
 	}
 
-	// Create a blob with the filecontents of "0"
-	blobOid, err := repo.CreateBlobFromBuffer([]byte("0"))
+	// Set the first ticket ID to 1
+	// Save "1" as a blob for next_ticket_id
+	blobOid, err := repo.CreateBlobFromBuffer([]byte("1"))
 	if err != nil {
 		panic(err)
 	}

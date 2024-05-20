@@ -6,15 +6,16 @@ import (
 	"strings"
 
 	"github.com/jeffWelling/giticket/internal/cli/subcommands"
+	"github.com/jeffWelling/giticket/pkg/common"
 )
-
-// constants
-const version = "0.0.3"
 
 func Exec() {
 	// Sanity check, are we being called with no subcommands
 	if len(os.Args) <= 1 {
-		printGeneralUsage()
+		common.PrintGeneralUsage()
+		fmt.Print("\n")
+		fmt.Println("Available Actions: " + strings.Join(subcommands.ListSubcommand(), ", "))
+		fmt.Print("\n")
 		return
 	}
 
@@ -25,7 +26,15 @@ func Exec() {
 	if subcommand_name == "" || strings.HasPrefix(subcommand_name, "-") {
 
 		if subcommand_name == "--version" {
-			fmt.Println("giticket version: " + version)
+			common.PrintVersion()
+			return
+		}
+
+		if subcommand_name == "--help" {
+			common.PrintGeneralUsage()
+			fmt.Print("\n")
+			fmt.Println("Available Actions: " + strings.Join(subcommands.ListSubcommand(), ", "))
+			fmt.Print("\n")
 			return
 		}
 
@@ -38,21 +47,6 @@ func Exec() {
 	subcommand.Execute()
 }
 
-func printGeneralUsage() {
-	fmt.Println("Giticket is a git based bug tracker written in golang.")
-	printVersion()
-	fmt.Println("Usgae: giticket {action} [parameters]")
-	fmt.Println("One action is accepted")
-	fmt.Println("Actions:")
-	availableActions := subcommands.ListSubcommand()
-	for _, action := range availableActions {
-		subcommands.Use(action).Help()
-	}
-	fmt.Println("Zero or more parameters are accepted, parameters include: -help, -version")
-	fmt.Println("giticket -help            will print this message")
-	fmt.Println("giticket {action} -help   will print the help for that command")
-	fmt.Println("giticket -version         will print the version of giticket")
-}
 func printBanner() {
 	fmt.Println("======================================")
 }
@@ -60,9 +54,5 @@ func printActionMissing() {
 	printBanner()
 	fmt.Println("Warning: No action given, and no parameters given. Nothing to do.")
 	printBanner()
-	printGeneralUsage()
-}
-
-func printVersion() {
-	fmt.Println("Giticket Version: " + version)
+	common.PrintGeneralUsage()
 }

@@ -1,7 +1,5 @@
 package subcommands
 
-import "fmt"
-
 var registrySubcommands map[string]SubcommandInterface
 
 type SubcommandInterface interface {
@@ -40,10 +38,4 @@ func ListSubcommand() []string {
 		keys = append(keys, k)
 	}
 	return keys
-}
-
-func DebugMessage(debug bool, msg string) {
-	if debug {
-		fmt.Println(msg)
-	}
 }
