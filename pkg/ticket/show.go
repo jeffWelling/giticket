@@ -32,6 +32,7 @@ func ShowTicketsText(t Ticket, debug bool) {
 	fmt.Println("Severity: " + strconv.Itoa(t.Severity))
 	fmt.Println("Labels: " + strings.Join(t.Labels, ", "))
 	fmt.Println("Created: " + time.Unix(t.Created, 0).String())
+	fmt.Println("NextTicketID: " + strconv.Itoa(t.NextCommentID))
 	fmt.Println("Comments: ")
 
 	for _, comment := range t.Comments {

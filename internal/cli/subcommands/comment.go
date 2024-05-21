@@ -61,10 +61,16 @@ func (subcommand *SubcommandComment) Execute() {
 
 	if subcommand.delete {
 		commentID := ticket.DeleteComment(&t, subcommand.commentID, thisRepo, branchName, subcommand.debug)
-		repo.Commit(&t, thisRepo, branchName, author, "Deleting comment "+commentID, subcommand.debug)
+		err := repo.Commit(&t, thisRepo, branchName, author, "Deleting comment "+commentID, subcommand.debug)
+		if err != nil {
+			panic(err)
+		}
 	} else {
 		commentID := ticket.AddComment(&t, subcommand.comment, thisRepo, branchName, subcommand.debug)
-		repo.Commit(&t, thisRepo, branchName, author, "Adding comment "+commentID, subcommand.debug)
+		err := repo.Commit(&t, thisRepo, branchName, author, "Adding comment "+commentID, subcommand.debug)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 

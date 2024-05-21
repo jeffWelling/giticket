@@ -36,6 +36,7 @@ func Commit(
 		return err
 	}
 	defer giticketTree.Free()
+	debug.DebugMessage(debugFlag, "Found .giticket tree: "+giticketTree.Id().String())
 
 	debug.DebugMessage(debugFlag, "Getting tickets subtree from .giticket")
 	giticketTicketsTree, err := GetSubTreeByName(giticketTree, thisRepo, "tickets", debugFlag)
@@ -43,12 +44,14 @@ func Commit(
 		return err
 	}
 	defer giticketTicketsTree.Free()
+	debug.DebugMessage(debugFlag, "Found tickets tree: "+giticketTicketsTree.Id().String())
 
 	debug.DebugMessage(debugFlag, "Creating new ticket blob")
 	NewTicketOID, err := thisRepo.CreateBlobFromBuffer([]byte(t.TicketToYaml()))
 	if err != nil {
 		return err
 	}
+	debug.DebugMessage(debugFlag, "Created new ticket blob: "+NewTicketOID.String())
 
 	debug.DebugMessage(debugFlag, "Getting tree builder for tickets tree")
 	giticketTicketsTreeBuilder, err := thisRepo.TreeBuilderFromTree(giticketTicketsTree)
@@ -56,8 +59,8 @@ func Commit(
 		return err
 	}
 
-	debug.DebugMessage(debugFlag, "Inserting new ticket into tickets tree")
-	err = giticketTicketsTreeBuilder.Insert("tickets/"+t.TicketFilename(), NewTicketOID, git.FilemodeBlob)
+	debug.DebugMessage(debugFlag, "Inserting new ticket ("+NewTicketOID.String()+") into tickets tree")
+	err = giticketTicketsTreeBuilder.Insert(t.TicketFilename(), NewTicketOID, git.FilemodeBlob)
 	if err != nil {
 		return err
 	}
@@ -67,6 +70,7 @@ func Commit(
 	if err != nil {
 		return err
 	}
+	debug.DebugMessage(debugFlag, "Wrote tickets tree: "+giticketTicketsTreeID.String())
 
 	debug.DebugMessage(debugFlag, "Creating new .giticket tree")
 	giticketTreeBuilder, err := thisRepo.TreeBuilderFromTree(giticketTree)
@@ -74,7 +78,7 @@ func Commit(
 		return err
 	}
 
-	debug.DebugMessage(debugFlag, "Inserting tickets tree into .giticket tree")
+	debug.DebugMessage(debugFlag, "Inserting tickets tree ("+giticketTicketsTreeID.String()+") into .giticket tree")
 	err = giticketTreeBuilder.Insert("tickets", giticketTicketsTreeID, git.FilemodeTree)
 	if err != nil {
 		return err
@@ -85,8 +89,9 @@ func Commit(
 	if err != nil {
 		return err
 	}
+	debug.DebugMessage(debugFlag, "Wrote .giticket tree: "+giticketTreeID.String())
 
-	debug.DebugMessage(debugFlag, "Inserting .giticket tree into root tree")
+	debug.DebugMessage(debugFlag, "Inserting .giticket tree ("+giticketTreeID.String()+") into root tree")
 	err = rootTreeBuilder.Insert(".giticket", giticketTreeID, git.FilemodeTree)
 	if err != nil {
 		return err
@@ -97,6 +102,7 @@ func Commit(
 	if err != nil {
 		return err
 	}
+	debug.DebugMessage(debugFlag, "Wrote root tree: "+newRootTreeID.String())
 
 	debug.DebugMessage(debugFlag, "Getting new root tree for commit")
 	newRootTree, err := thisRepo.LookupTree(newRootTreeID)
@@ -106,7 +112,7 @@ func Commit(
 	defer newRootTree.Free()
 
 	debug.DebugMessage(debugFlag, "Creating commit")
-	commitID, err := thisRepo.CreateCommit("refs/heads/"+branchName, author, author, commitMessage, newRootTree)
+	commitID, err := thisRepo.CreateCommit("refs/heads/"+branchName, author, author, commitMessage, newRootTree, parentCommit)
 	if err != nil {
 		return err
 	}
