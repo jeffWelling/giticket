@@ -9,7 +9,12 @@ import (
 )
 
 func DeleteComment(t *Ticket, commentID int, repo *git.Repository, branchName string, debug bool) string {
-	updatedComments := append(t.Comments[:commentID], t.Comments[commentID+1:]...)
+	updatedComments := []Comment{}
+	for _, comment := range t.Comments {
+		if comment.ID != commentID {
+			updatedComments = append(updatedComments, comment)
+		}
+	}
 	t.Comments = updatedComments
 	return strconv.Itoa(t.ID) + "-" + strconv.Itoa(commentID)
 }
