@@ -56,13 +56,13 @@ func (subcommand *SubcommandCreate) Help() {
 	fmt.Println("  create - Create a new ticket")
 	fmt.Println("    eg: giticket create [parameters]")
 	fmt.Println("    parameters:")
-	fmt.Println("      --title | -t \"Ticket Title\"")
+	fmt.Println("      --title       | -t \"Ticket Title\"")
 	fmt.Println("      --description | -d \"Ticket Description\"")
-	fmt.Println("      --comments | -c '[{\"Body\":\"My comment\", \"Author\": \"John Smith <smith@example.com>\", \"Created\": 1816534799}]'")
-	fmt.Println("      --labels | -l \"my first tag, tag2, tag3\"")
-	fmt.Println("      --priority | -p 1")
-	fmt.Println("      --severity | -sev 1")
-	fmt.Println("      --status | -s\"new\"")
+	fmt.Println("      --priority    | -p 1")
+	fmt.Println("      --severity    | -sev 1")
+	fmt.Println("      --status      | -s \"new\"")
+	fmt.Println("      --comments '[{\"Body\":\"My comment\", \"Author\": \"John Smith <smith@example.com>\", \"Created\": 1816534799}]'")
+	fmt.Println("      --labels \"my first tag,tag2,tag3\"")
 	fmt.Println("      --debug")
 	fmt.Println("      --help")
 	fmt.Println("    examples:")
@@ -72,8 +72,8 @@ func (subcommand *SubcommandCreate) Help() {
 	fmt.Println("        example: giticket create --title \"Ticket Title\" --description \"Ticket Description\" --priority 1")
 	fmt.Println("      - name: Create a new ticket with title \"Ticket Title\" and the label \"first tag\"")
 	fmt.Println("        example: giticket create --title \"Ticket Title\" --labels \"first tag\"")
-	fmt.Println("      - name: Create a new ticket with title \"Ticket Title\" and the label \"first tag\" and \"second tag\"")
-	fmt.Println("        example: giticket create --title \"Ticket Title\" --labels \"first tag, second tag\"")
+	fmt.Println("      - name: Create a new ticket with title \"Ticket Title\" and the label \"first label\" and \"second label\"")
+	fmt.Println("        example: giticket create --title \"Ticket Title\" --labels \"first label,second label\"")
 	fmt.Println("      - name: Create a new ticket with title \"Ticket Title\" and a single comment")
 	fmt.Println("        example: giticket create --title \"Ticket Title\" --comments '[{\"Body\":\"My comment\", \"Author\": \"John Smith <smith@example.com>\"}]'")
 	fmt.Println("      - name: Create a new ticket with title \"Ticket Title\" and two comments with one Created date set manually")
@@ -91,7 +91,6 @@ func (subcommand *SubcommandCreate) InitFlags(args []string) error {
 	subcommand.flagset.StringVar(&subcommand.description, "description", "", "Description of the ticket to create")
 	subcommand.flagset.StringVar(&subcommand.description, "d", "", "Description of the ticket to create")
 	labelsFlag := subcommand.flagset.String("labels", "", "Comma separated list of labels to apply to the ticket")
-	lFlag := subcommand.flagset.String("l", "", "Comma separated list of labels to apply to the ticket")
 	subcommand.flagset.IntVar(&subcommand.priority, "priority", 1, "Priority of the ticket")
 	subcommand.flagset.IntVar(&subcommand.priority, "p", 1, "Priority of the ticket")
 	subcommand.flagset.IntVar(&subcommand.severity, "severity", 1, "Severity of the ticket")
@@ -100,7 +99,6 @@ func (subcommand *SubcommandCreate) InitFlags(args []string) error {
 	subcommand.flagset.StringVar(&subcommand.status, "s", "new", "Status of the ticket")
 	subcommand.flagset.BoolVar(&subcommand.helpFlag, "help", false, "Print help for the create subcommand")
 	commentsFlag := subcommand.flagset.String("comments", "", "Comma separated list of comments to add to the ticket")
-	cFlag := subcommand.flagset.String("c", "", "Comma separated list of comments to add to the ticket")
 
 	subcommand.flagset.Parse(args)
 
@@ -126,37 +124,9 @@ func (subcommand *SubcommandCreate) InitFlags(args []string) error {
 		}
 		subcommand.labels = labels
 	}
-	if *lFlag != "" {
-		labels := strings.Split(*labelsFlag, ",")
-		for i, label := range labels {
-			labels[i] = strings.TrimSpace(label)
-		}
-		subcommand.labels = labels
-	}
 
 	// Handle comments separately to parse them into a slice of Comments
 	if *commentsFlag != "" {
-		// First comment ID starts at 1
-		subcommand.next_comment_id = 1
-		var comments []ticket.Comment
-		err := json.Unmarshal([]byte(*commentsFlag), &comments)
-		if err != nil {
-			return err
-		}
-		for i := range comments {
-			comments[i].ID = subcommand.next_comment_id
-			subcommand.next_comment_id++
-
-			if comments[i].Created == 0 {
-				comments[i].Created = time.Now().Unix()
-			}
-			if comments[i].Author == "" {
-				comments[i].Author = author.Name + " <" + author.Email + ">"
-			}
-		}
-		subcommand.comments = comments
-	}
-	if *cFlag != "" {
 		// First comment ID starts at 1
 		subcommand.next_comment_id = 1
 		var comments []ticket.Comment
