@@ -6,7 +6,9 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/jeffWelling/giticket/pkg/debug"
 	"github.com/jeffWelling/giticket/pkg/ticket"
+	git "github.com/jeffwelling/git2go/v37"
 )
 
 func init() {
@@ -15,21 +17,30 @@ func init() {
 }
 
 type SubcommandList struct {
-	flagset *flag.FlagSet
-	debug   bool
+	flagset     *flag.FlagSet
+	debugFlag   bool
+	helpFlag    bool
+	windowWidth int
 }
 
-func (subcommand *SubcommandList) InitFlags(args []string) {
+func (subcommand *SubcommandList) InitFlags(args []string) error {
 	subcommand.flagset = flag.NewFlagSet("list", flag.ExitOnError)
+	return nil
 }
 
 func (subcommand *SubcommandList) Execute() {
-	listParams := listParams{
-		windowLength: 0,
-		debug:        subcommand.debug,
+	branchName := "giticket"
+
+	debug.DebugMessage(subcommand.debugFlag, "Opening git repository")
+	thisRepo, err := git.OpenRepository(".")
+	if err != nil {
+		panic(err)
 	}
 
-	output := ListTickets(listParams)
+	output, err := ListTickets(thisRepo, branchName, subcommand.windowWidth, subcommand.debugFlag)
+	if err != nil {
+		panic(err)
+	}
 	fmt.Print(output)
 }
 
@@ -40,18 +51,21 @@ func (subcommand *SubcommandList) Help() {
 
 type listParams struct {
 	windowLength int
-	debug        bool
+	debugFlag    bool
 }
 
 // ListTickets() takes a listParams parameter which contains the optional
 // and mandatory parameters for ListTickets(). The only mandatory parameter is
 // windowLength which is the length of the window to list tickets in.
-func ListTickets(params listParams) string {
+func ListTickets(thisRepo *git.Repository, branchName string, windowWidth int, debugFlag bool) (string, error) {
 	output := ""
 
 	// Get a list of tickets from the repo
 	var ticketsList []ticket.Ticket
-	ticketsList = ticket.GetListOfTickets(params.debug)
+	ticketsList, err := ticket.GetListOfTickets(thisRepo, branchName, debugFlag)
+	if err != nil {
+		return "", fmt.Errorf("Unable to list tickets: %s", err) // TODO: err
+	}
 
 	widthOfID := widest(ticketsList, "ID")
 	if widthOfID < 3 {
@@ -81,7 +95,7 @@ func ListTickets(params listParams) string {
 		output += fmt.Sprintf("%s | %s | %s | %s\n", padRight(IDAsString, widthOfID), padRight(t.Title, widthOfTitle), padRight(SeverityAsString, widthOfSeverity), padRight(t.Status, widthOfStatus))
 	}
 
-	return output
+	return output, nil
 }
 
 // padRight() takes string s and width int, it finds the difference in length

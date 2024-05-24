@@ -1,11 +1,13 @@
 package subcommands
 
+import "sort"
+
 var registrySubcommands map[string]SubcommandInterface
 
 type SubcommandInterface interface {
 	Execute()
 	Help()
-	InitFlags([]string)
+	InitFlags([]string) error
 }
 
 // registerSubcommand() takes a subcommand_name and a subcommand_plugin
@@ -37,5 +39,7 @@ func ListSubcommand() []string {
 	for k := range registrySubcommands {
 		keys = append(keys, k)
 	}
+	// Sort keys alphabetically and return the sorted value
+	sort.Strings(keys)
 	return keys
 }

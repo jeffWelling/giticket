@@ -18,6 +18,7 @@ func init() {
 
 type SubcommandComment struct {
 	flagset   *flag.FlagSet
+	helpFlag  bool
 	ticketID  int
 	commentID int
 	comment   string
@@ -25,15 +26,26 @@ type SubcommandComment struct {
 	debug     bool
 }
 
-func (subcommand *SubcommandComment) InitFlags(args []string) {
+func (subcommand *SubcommandComment) InitFlags(args []string) error {
 	subcommand.flagset = flag.NewFlagSet("comment", flag.ExitOnError)
 
+	subcommand.flagset.IntVar(&subcommand.ticketID, "ticketid", 0, "Ticket ID")
 	subcommand.flagset.IntVar(&subcommand.ticketID, "id", 0, "Ticket ID")
 	subcommand.flagset.IntVar(&subcommand.commentID, "commentid", 0, "Comment ID")
+	subcommand.flagset.IntVar(&subcommand.commentID, "cid", 0, "Comment ID")
 	subcommand.flagset.StringVar(&subcommand.comment, "comment", "", "Comment")
+	subcommand.flagset.StringVar(&subcommand.comment, "c", "", "Comment")
+	subcommand.flagset.BoolVar(&subcommand.delete, "d", false, "Delete comment")
 	subcommand.flagset.BoolVar(&subcommand.delete, "delete", false, "Delete comment")
 	subcommand.flagset.BoolVar(&subcommand.debug, "debug", false, "Print debug info")
+	subcommand.flagset.BoolVar(&subcommand.helpFlag, "help", false, "Print help for the comment subcommand")
 	subcommand.flagset.Parse(args)
+
+	if subcommand.helpFlag {
+		common.PrintVersion()
+		fmt.Println("giticket")
+		subcommand.Help()
+	}
 
 	// Sanity check of args
 	if subcommand.delete && subcommand.commentID == 0 {
@@ -42,6 +54,7 @@ func (subcommand *SubcommandComment) InitFlags(args []string) {
 		common.PrintGeneralUsage()
 		subcommand.Help()
 	}
+	return nil
 }
 
 func (subcommand *SubcommandComment) Execute() {
@@ -56,7 +69,10 @@ func (subcommand *SubcommandComment) Execute() {
 	// Get author
 	author := common.GetAuthor(thisRepo)
 
-	tickets := ticket.GetListOfTickets(subcommand.debug)
+	tickets, err := ticket.GetListOfTickets(thisRepo, branchName, subcommand.debug)
+	if err != nil {
+		panic(err)
+	}
 	t := ticket.FilterTicketsByID(tickets, subcommand.ticketID)
 
 	if subcommand.delete {
@@ -75,10 +91,19 @@ func (subcommand *SubcommandComment) Execute() {
 }
 
 func (subcommand *SubcommandComment) Help() {
-	fmt.Println("  comment - Add comment to ticket")
+	fmt.Println("  comment - Add or remove a comment from a ticket")
 	fmt.Println("    eg: giticket comment [parameters]")
 	fmt.Println("    parameters:")
-	fmt.Println("      -id N")
-	fmt.Println("      -comment \"My comment\"")
-	fmt.Println("      -delete")
+	fmt.Println("      --ticketid  | --id N")
+	fmt.Println("      --comment   | --c \"My comment\"")
+	fmt.Println("      --commentid | --cid N")
+	fmt.Println("      --delete    | -d")
+	fmt.Println("      --debug")
+	fmt.Println("    examples:")
+	fmt.Println("      - name: Add a comment to ticket with ID #1")
+	fmt.Println("        example: giticket comment --ticketid 1 --comment \"My new comment on ticket with ID #1\"")
+	fmt.Println("      - name: Delete a comment with comment ID #1 on ticket with ID #1")
+	fmt.Println("        example: giticket comment --ticketid 1 --commentid 1 --delete")
+	fmt.Println("      - name: Add a multi-line comment to ticket with ID #1")
+	fmt.Println("        example: giticket comment --ticketid 1 --comment \"This is a multi-line comment. \n        This is a new line in the same comment\"")
 }

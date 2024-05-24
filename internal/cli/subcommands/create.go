@@ -33,6 +33,7 @@ type SubcommandCreate struct {
 	debug           bool
 	flagset         *flag.FlagSet
 	next_comment_id int
+	helpFlag        bool
 }
 
 // Execute() is called when this subcommand is invoked
@@ -55,40 +56,77 @@ func (subcommand *SubcommandCreate) Help() {
 	fmt.Println("  create - Create a new ticket")
 	fmt.Println("    eg: giticket create [parameters]")
 	fmt.Println("    parameters:")
-	fmt.Println("      -title \"Ticket Title\"")
-	fmt.Println("      -description \"Ticket Description\"")
-	fmt.Println("      -labels \"my first tag, my second tag, tag3\"")
-	fmt.Println("      -priority 1")
-	fmt.Println("      -severity 1")
-	fmt.Println("      -status \"new\"")
-	fmt.Println("      -debug")
+	fmt.Println("      --title | -t \"Ticket Title\"")
+	fmt.Println("      --description | -d \"Ticket Description\"")
+	fmt.Println("      --comments | -c '[{\"Body\":\"My comment\", \"Author\": \"John Smith <smith@example.com>\", \"Created\": 1816534799}]'")
+	fmt.Println("      --labels | -l \"my first tag, tag2, tag3\"")
+	fmt.Println("      --priority | -p 1")
+	fmt.Println("      --severity | -sev 1")
+	fmt.Println("      --status | -s\"new\"")
+	fmt.Println("      --debug")
+	fmt.Println("      --help")
+	fmt.Println("    examples:")
+	fmt.Println("      - name: Create a new ticket with title \"Ticket Title\" and description \"Ticket Description\"")
+	fmt.Println("        example: giticket create --title \"Ticket Title\" --description \"Ticket Description\"")
+	fmt.Println("      - name: Create a new ticket with title \"Ticket Title\" and description \"Ticket Description\" and priority 1")
+	fmt.Println("        example: giticket create --title \"Ticket Title\" --description \"Ticket Description\" --priority 1")
+	fmt.Println("      - name: Create a new ticket with title \"Ticket Title\" and the label \"first tag\"")
+	fmt.Println("        example: giticket create --title \"Ticket Title\" --labels \"first tag\"")
+	fmt.Println("      - name: Create a new ticket with title \"Ticket Title\" and the label \"first tag\" and \"second tag\"")
+	fmt.Println("        example: giticket create --title \"Ticket Title\" --labels \"first tag, second tag\"")
+	fmt.Println("      - name: Create a new ticket with title \"Ticket Title\" and a single comment")
+	fmt.Println("        example: giticket create --title \"Ticket Title\" --comments '[{\"Body\":\"My comment\", \"Author\": \"John Smith <smith@example.com>\"}]'")
+	fmt.Println("      - name: Create a new ticket with title \"Ticket Title\" and two comments with one Created date set manually")
+	fmt.Println("        example: giticket create --title \"Ticket Title\" --comments '[{\"Body\":\"My comment\", \"Author\": \"John Smith <smith@example.com>\"}, {\"Body\":\"My second comment\", \"Author\": \"John Smith <smith@example.com>\", \"Created\": 1816534799}]'")
 }
 
 // InitFlags()
-func (subcommand *SubcommandCreate) InitFlags(args []string) {
+func (subcommand *SubcommandCreate) InitFlags(args []string) error {
 	subcommand.flagset = flag.NewFlagSet("create", flag.ExitOnError)
 
 	subcommand.flagset.BoolVar(&subcommand.debug, "debug", false, "Print debug info")
-	subcommand.flagset.StringVar(&subcommand.title, "title", "", "Title of the ticket to create")
+
+	subcommand.flagset.StringVar(&subcommand.title, "title", "", "Title for the new ticket")
+	subcommand.flagset.StringVar(&subcommand.title, "t", "", "Title for the new ticket")
 	subcommand.flagset.StringVar(&subcommand.description, "description", "", "Description of the ticket to create")
+	subcommand.flagset.StringVar(&subcommand.description, "d", "", "Description of the ticket to create")
 	labelsFlag := subcommand.flagset.String("labels", "", "Comma separated list of labels to apply to the ticket")
+	lFlag := subcommand.flagset.String("l", "", "Comma separated list of labels to apply to the ticket")
 	subcommand.flagset.IntVar(&subcommand.priority, "priority", 1, "Priority of the ticket")
+	subcommand.flagset.IntVar(&subcommand.priority, "p", 1, "Priority of the ticket")
 	subcommand.flagset.IntVar(&subcommand.severity, "severity", 1, "Severity of the ticket")
+	subcommand.flagset.IntVar(&subcommand.severity, "sev", 1, "Severity of the ticket")
 	subcommand.flagset.StringVar(&subcommand.status, "status", "new", "Status of the ticket")
+	subcommand.flagset.StringVar(&subcommand.status, "s", "new", "Status of the ticket")
+	subcommand.flagset.BoolVar(&subcommand.helpFlag, "help", false, "Print help for the create subcommand")
 	commentsFlag := subcommand.flagset.String("comments", "", "Comma separated list of comments to add to the ticket")
+	cFlag := subcommand.flagset.String("c", "", "Comma separated list of comments to add to the ticket")
 
 	subcommand.flagset.Parse(args)
+
+	if subcommand.helpFlag {
+		common.PrintVersion()
+		fmt.Println("giticket")
+		subcommand.Help()
+	}
 
 	// get the author
 	debug.DebugMessage(subcommand.debug, "Opening git repository to get author")
 	repo, err := git.OpenRepository(".")
 	if err != nil {
-		panic(err)
+		return err
 	}
 	author := common.GetAuthor(repo)
 
 	// Handle labels separately to split them into a slice
 	if *labelsFlag != "" {
+		labels := strings.Split(*labelsFlag, ",")
+		for i, label := range labels {
+			labels[i] = strings.TrimSpace(label)
+		}
+		subcommand.labels = labels
+	}
+	if *lFlag != "" {
 		labels := strings.Split(*labelsFlag, ",")
 		for i, label := range labels {
 			labels[i] = strings.TrimSpace(label)
@@ -103,7 +141,28 @@ func (subcommand *SubcommandCreate) InitFlags(args []string) {
 		var comments []ticket.Comment
 		err := json.Unmarshal([]byte(*commentsFlag), &comments)
 		if err != nil {
-			panic(err)
+			return err
+		}
+		for i := range comments {
+			comments[i].ID = subcommand.next_comment_id
+			subcommand.next_comment_id++
+
+			if comments[i].Created == 0 {
+				comments[i].Created = time.Now().Unix()
+			}
+			if comments[i].Author == "" {
+				comments[i].Author = author.Name + " <" + author.Email + ">"
+			}
+		}
+		subcommand.comments = comments
+	}
+	if *cFlag != "" {
+		// First comment ID starts at 1
+		subcommand.next_comment_id = 1
+		var comments []ticket.Comment
+		err := json.Unmarshal([]byte(*commentsFlag), &comments)
+		if err != nil {
+			return err
 		}
 		for i := range comments {
 			comments[i].ID = subcommand.next_comment_id
@@ -122,8 +181,9 @@ func (subcommand *SubcommandCreate) InitFlags(args []string) {
 	// Check for required parameters
 	if subcommand.title == "" {
 		ticket.PrintParameterMissing("title")
-		return
+		return fmt.Errorf("Cannot create a ticket without a title")
 	}
+	return nil
 }
 
 // ticketFilename() returns the ticket title encoded as a filename prefixed with

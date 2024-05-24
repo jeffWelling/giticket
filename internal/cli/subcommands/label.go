@@ -19,19 +19,31 @@ func init() {
 type SubcommandLabel struct {
 	flagset    *flag.FlagSet
 	debugFlag  bool
+	helpFlag   bool
 	label      string
 	deleteFlag bool
 	ticketID   int
 }
 
-func (subcommand *SubcommandLabel) InitFlags(args []string) {
+func (subcommand *SubcommandLabel) InitFlags(args []string) error {
 	subcommand.flagset = flag.NewFlagSet("label", flag.ExitOnError)
 
 	subcommand.flagset.BoolVar(&subcommand.debugFlag, "debug", false, "Print debug info")
+	subcommand.flagset.BoolVar(&subcommand.helpFlag, "help", false, "Print help")
+
 	subcommand.flagset.StringVar(&subcommand.label, "label", "", "Label to add")
+	subcommand.flagset.StringVar(&subcommand.label, "l", "", "Label to add")
 	subcommand.flagset.BoolVar(&subcommand.deleteFlag, "delete", false, "Delete label")
+	subcommand.flagset.BoolVar(&subcommand.deleteFlag, "d", false, "Delete label")
+	subcommand.flagset.IntVar(&subcommand.ticketID, "ticketid", 0, "Ticket ID")
 	subcommand.flagset.IntVar(&subcommand.ticketID, "id", 0, "Ticket ID")
 	subcommand.flagset.Parse(args)
+
+	if subcommand.helpFlag {
+		common.PrintVersion()
+		fmt.Println("giticket")
+		subcommand.Help()
+	}
 
 	// Sanity check of args
 	if subcommand.ticketID == 0 {
@@ -53,6 +65,8 @@ func (subcommand *SubcommandLabel) InitFlags(args []string) {
 		common.PrintGeneralUsage()
 		subcommand.Help()
 	}
+
+	return nil
 }
 
 func (subcommand *SubcommandLabel) Execute() {
@@ -67,7 +81,10 @@ func (subcommand *SubcommandLabel) Execute() {
 	// Get author
 	author := common.GetAuthor(thisRepo)
 
-	tickets := ticket.GetListOfTickets(subcommand.debugFlag)
+	tickets, err := ticket.GetListOfTickets(thisRepo, branchName, subcommand.debugFlag)
+	if err != nil {
+		panic(err)
+	}
 	t := ticket.FilterTicketsByID(tickets, subcommand.ticketID)
 
 	if subcommand.deleteFlag {
@@ -88,8 +105,15 @@ func (subcommand *SubcommandLabel) Execute() {
 func (subcommand *SubcommandLabel) Help() {
 	fmt.Println("  label - Add or delete labels")
 	fmt.Println("    eg: giticket label [params]")
-	fmt.Println("    params:")
-	fmt.Println("      -id 1")
-	fmt.Println("      -label \"my first label\"")
-	fmt.Println("      -delete")
+	fmt.Println("    parameters:")
+	fmt.Println("      --ticketid | --id 1")
+	fmt.Println("      --label    | --l \"my first label\"")
+	fmt.Println("      --delete   | -d")
+	fmt.Println("      --debug")
+	fmt.Println("      --help")
+	fmt.Println("    examples:")
+	fmt.Println("      - name: Add label \"my first label\" to ticket with ID #1")
+	fmt.Println("        example: giticket label --ticketid 1 --label \"my first label\"")
+	fmt.Println("      - name: Delete label \"my first label\" from ticket with ID #1")
+	fmt.Println("        example: giticket label --ticketid 1 --label \"my first label\" --delete")
 }

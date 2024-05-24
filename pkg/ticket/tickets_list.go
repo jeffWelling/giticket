@@ -3,109 +3,79 @@ package ticket
 import (
 	"fmt"
 
+	"github.com/jeffWelling/giticket/pkg/debug"
 	git "github.com/jeffwelling/git2go/v37"
 	"gopkg.in/yaml.v2"
 )
 
-func GetListOfTickets(debug bool) []Ticket {
-	branchName := "giticket"
-
-	if debug {
-		fmt.Println("Opening repository '.'")
-	}
-	repo, err := git.OpenRepository(".")
-	if err != nil {
-		panic(err)
-	}
-
+func GetListOfTickets(thisRepo *git.Repository, branchName string, debugFlag bool) ([]Ticket, error) {
 	// Find the branch and its target commit
-	if debug {
-		fmt.Println("looking up branch: ", branchName)
-	}
-	branch, err := repo.LookupBranch(branchName, git.BranchLocal)
+	debug.DebugMessage(debugFlag, "Looking up branch: "+branchName)
+	branch, err := thisRepo.LookupBranch(branchName, git.BranchLocal)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("Unable to list tickets because there was an error looking up the branch: %s", err)
 	}
 
 	// Lookup the commit the branch references
-	if debug {
-		fmt.Println("looking up commit: ", branch.Target())
-	}
-	parentCommit, err := repo.LookupCommit(branch.Target())
+	debug.DebugMessage(debugFlag, "Looking up commit: "+branch.Target().String())
+	parentCommit, err := thisRepo.LookupCommit(branch.Target())
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("Unable to list tickets because there was an error looking up the commit: %s", err)
 	}
 
-	if debug {
-		fmt.Println("looking up tree from parent commit, tree ID:", parentCommit.TreeId())
-	}
+	debug.DebugMessage(debugFlag, "looking up tree from parent commit, tree ID: "+parentCommit.TreeId().String())
 	parentCommitTree, err := parentCommit.Tree()
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("Unable to list tickets because there was an error looking up the tree of the parent commit: %s", err)
 	}
 	defer parentCommitTree.Free()
 
-	if debug {
-		fmt.Println("looking up .giticket tree entry from parent commit: ", parentCommitTree.Id())
-	}
+	debug.DebugMessage(debugFlag, "looking up .giticket tree entry from parent commit: "+parentCommitTree.Id().String())
 	giticketTreeEntry, err := parentCommitTree.EntryByPath(".giticket")
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("Unable to list tickets because there was an error looking up the .giticket tree entry: %s", err)
 	}
 
-	if debug {
-		fmt.Println("looking up giticketTree from ID: ", giticketTreeEntry.Id)
-	}
-	giticketTree, err := repo.LookupTree(giticketTreeEntry.Id)
+	debug.DebugMessage(debugFlag, "looking up giticketTree from ID: "+giticketTreeEntry.Id.String())
+	giticketTree, err := thisRepo.LookupTree(giticketTreeEntry.Id)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("Unable to list tickets because there was an error looking up the .giticket tree from the ID: %s", err)
 	}
 	defer giticketTree.Free()
 
-	if debug {
-		fmt.Println("looking up tickets tree from .giticket tree: ", giticketTreeEntry.Id)
-	}
+	debug.DebugMessage(debugFlag, "looking up tickets tree from .giticket tree: "+giticketTreeEntry.Id.String())
 	giticketTicketsTreeEntry, err := giticketTree.EntryByPath("tickets")
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("Unable to list tickets because there was an error looking up the .giticket/tickets tree entry: %s", err)
 	}
 
-	if debug {
-		fmt.Println("looking up giticketTicketsTree from ID: ", giticketTicketsTreeEntry.Id)
-	}
-	giticketTicketsTree, err := repo.LookupTree(giticketTicketsTreeEntry.Id)
+	debug.DebugMessage(debugFlag, "looking up giticketTicketsTree from ID: "+giticketTicketsTreeEntry.Id.String())
+	giticketTicketsTree, err := thisRepo.LookupTree(giticketTicketsTreeEntry.Id)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("Unable to list tickets because there was an error looking up the .giticket/tickets tree from the ID: %s", err)
 	}
 	defer giticketTicketsTree.Free()
 
 	var ticketList []Ticket
 	var t Ticket
 	giticketTicketsTree.Walk(func(name string, entry *git.TreeEntry) error {
-
-		blob, err := repo.LookupBlob(entry.Id)
+		ticketFile, err := thisRepo.LookupBlob(entry.Id)
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("Error walking the tickets tree and looking up the entry ID: %s", err)
 		}
-		defer blob.Free()
-
-		ticketFile, err := repo.LookupBlob(entry.Id)
-		if err != nil {
-			panic(err)
-		}
+		defer ticketFile.Free()
 
 		t = Ticket{}
 		// Unmarshal the ticket which is yaml
 		err = yaml.Unmarshal(ticketFile.Contents(), &t)
 		if err != nil {
-			fmt.Println("Error unmarshalling yaml: ", err)
-			fmt.Println("Contents: ", string(ticketFile.Contents()))
-			panic(err)
+			return fmt.Errorf("Error unmarshalling yaml ticket from file in tickets directory: %s", err)
 		}
 
 		ticketList = append(ticketList, t)
 		return nil
 	})
 
-	return ticketList
+	debug.DebugMessage(debugFlag, "Number of tickets: "+fmt.Sprint(len(ticketList)))
+	return ticketList, nil
 }

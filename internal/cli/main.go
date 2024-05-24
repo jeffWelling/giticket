@@ -14,7 +14,7 @@ func Exec() {
 	if len(os.Args) <= 1 {
 		common.PrintGeneralUsage()
 		fmt.Print("\n")
-		fmt.Println("Available Actions: " + strings.Join(subcommands.ListSubcommand(), ", "))
+		fmt.Println("Available Actions:\n-  " + strings.Join(subcommands.ListSubcommand(), "\n-  "))
 		fmt.Print("\n")
 		return
 	}
@@ -33,7 +33,7 @@ func Exec() {
 		if subcommand_name == "--help" {
 			common.PrintGeneralUsage()
 			fmt.Print("\n")
-			fmt.Println("Available Actions: " + strings.Join(subcommands.ListSubcommand(), ", "))
+			fmt.Println("Available Actions:\n-  " + strings.Join(subcommands.ListSubcommand(), "\n-  "))
 			fmt.Print("\n")
 			return
 		}
@@ -43,7 +43,17 @@ func Exec() {
 	}
 
 	subcommand := subcommands.Use(subcommand_name)
-	subcommand.InitFlags(os.Args[2:])
+	if len(os.Args) <= 2 && subcommand_name != "init" && subcommand_name != "list" {
+		// Every subcommand except init requires one or more parameters
+		subcommand.Help()
+		return
+	}
+	err := subcommand.InitFlags(os.Args[2:])
+	if err != nil {
+		fmt.Println("There was a problem initializing the flags: ")
+		fmt.Println(err)
+		return
+	}
 	subcommand.Execute()
 }
 

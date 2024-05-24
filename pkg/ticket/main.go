@@ -24,13 +24,6 @@ type Ticket struct {
 	Created int64
 }
 
-type Comment struct {
-	ID      int
-	Created int64
-	Body    string
-	Author  string
-}
-
 // Return the value of ".giticket/next_ticket_id" from the given commit as an
 // int, or returns 0 and an error. Make sure to write the incremented value back
 // things to ".giticket/next_ticket_id" in the same commit. Repo is required to

@@ -8,6 +8,13 @@ import (
 	git "github.com/jeffwelling/git2go/v37"
 )
 
+type Comment struct {
+	ID      int
+	Created int64
+	Body    string
+	Author  string
+}
+
 func DeleteComment(t *Ticket, commentID int, repo *git.Repository, branchName string, debug bool) string {
 	updatedComments := []Comment{}
 	for _, comment := range t.Comments {
