@@ -1,4 +1,4 @@
-package giticket
+package main
 
 import (
 	"github.com/jeffwelling/giticket/internal/cli"
