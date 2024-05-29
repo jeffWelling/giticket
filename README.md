@@ -6,6 +6,14 @@ Store your tickets alongside your code under a branch using this golang tool.
 
 Giticket is a ticketing tool written in golang that allows you to store tickets beside your code under a branch, it is a spiritual successor to ticgit and ticgit-ng which were written in ruby.
 
+## Install
+
+```bash
+go install github.com/jeffwelling/giticket/cmd/giticket@v0.1.1
+```
+
+This will install giticket to $GOPATH/bin, make sure it is in your $PATH.
+
 ## Usage
 
 ```bash
