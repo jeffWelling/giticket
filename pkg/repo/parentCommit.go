@@ -3,8 +3,8 @@ package repo
 import (
 	"errors"
 
-	"github.com/jeffWelling/giticket/pkg/debug"
 	git "github.com/jeffwelling/git2go/v37"
+	"github.com/jeffwelling/giticket/pkg/debug"
 )
 
 // Take a repo and a branch name, lookup the branch name and return the parent

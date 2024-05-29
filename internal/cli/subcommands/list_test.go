@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jeffWelling/giticket/pkg/ticket"
+	"github.com/jeffwelling/giticket/pkg/ticket"
 )
 
 func TestWidest_FindWidestTitle(t *testing.T) {

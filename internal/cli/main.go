@@ -5,8 +5,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/jeffWelling/giticket/internal/cli/subcommands"
-	"github.com/jeffWelling/giticket/pkg/common"
+	"github.com/jeffwelling/giticket/internal/cli/subcommands"
+	"github.com/jeffwelling/giticket/pkg/common"
 )
 
 func Exec() {

@@ -1,9 +1,9 @@
 package ticket
 
 import (
-	"github.com/jeffWelling/giticket/pkg/common"
-	"github.com/jeffWelling/giticket/pkg/debug"
 	git "github.com/jeffwelling/git2go/v37"
+	"github.com/jeffwelling/giticket/pkg/common"
+	"github.com/jeffwelling/giticket/pkg/debug"
 	"gopkg.in/yaml.v2"
 )
 

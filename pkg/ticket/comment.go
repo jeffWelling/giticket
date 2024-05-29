@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jeffWelling/giticket/pkg/common"
 	git "github.com/jeffwelling/git2go/v37"
+	"github.com/jeffwelling/giticket/pkg/common"
 )
 
 type Comment struct {

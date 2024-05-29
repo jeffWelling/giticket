@@ -1,4 +1,4 @@
-module github.com/jeffWelling/giticket
+module github.com/jeffwelling/giticket
 
 go 1.21.6
 

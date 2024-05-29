@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jeffWelling/giticket/pkg/common"
-	"github.com/jeffWelling/giticket/pkg/debug"
-	"github.com/jeffWelling/giticket/pkg/repo"
-	"github.com/jeffWelling/giticket/pkg/ticket"
 	git "github.com/jeffwelling/git2go/v37"
+	"github.com/jeffwelling/giticket/pkg/common"
+	"github.com/jeffwelling/giticket/pkg/debug"
+	"github.com/jeffwelling/giticket/pkg/repo"
+	"github.com/jeffwelling/giticket/pkg/ticket"
 )
 
 // init() is used to register this subcommand
