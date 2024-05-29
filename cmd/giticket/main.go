@@ -1,7 +1,7 @@
 package giticket
 
 import (
-	"github.com/jeffwelling/giticket/internal/cli"
+	"github.com/jeffWelling/giticket/internal/cli"
 )
 
 func main() {
