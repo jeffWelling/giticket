@@ -16,11 +16,12 @@ func init() {
 }
 
 type SubcommandShow struct {
-	debugFlag bool
-	helpFlag  bool
-	output    string
-	ticket_id int
-	flagset   *flag.FlagSet
+	debugFlag  bool
+	helpFlag   bool
+	output     string
+	ticket_id  int
+	flagset    *flag.FlagSet
+	parameters map[string]interface{}
 }
 
 func (subcommand *SubcommandShow) Execute() {
@@ -59,6 +60,13 @@ func (subcommand *SubcommandShow) Help() {
 }
 
 func (subcommand *SubcommandShow) InitFlags(args []string) error {
+	subcommand.parameters = make(map[string]interface{})
+	var (
+		helpFlag  bool
+		debugFlag bool
+		output    string
+		ticket_id int
+	)
 	subcommand.flagset = flag.NewFlagSet("show", flag.ExitOnError)
 
 	subcommand.flagset.BoolVar(&subcommand.debugFlag, "debug", false, "Print debug info")
@@ -68,6 +76,11 @@ func (subcommand *SubcommandShow) InitFlags(args []string) error {
 	subcommand.flagset.IntVar(&subcommand.ticket_id, "ticketid", 0, "Ticket ID")
 	subcommand.flagset.IntVar(&subcommand.ticket_id, "id", 0, "Ticket ID")
 	subcommand.flagset.Parse(args)
+
+	subcommand.parameters["debugFlag"] = debugFlag
+	subcommand.parameters["helpFlag"] = helpFlag
+	subcommand.parameters["output"] = output
+	subcommand.parameters["ticket_id"] = ticket_id
 
 	if subcommand.helpFlag {
 		common.PrintVersion()
@@ -83,4 +96,14 @@ func (subcommand *SubcommandShow) InitFlags(args []string) error {
 	}
 
 	return nil
+}
+
+// Parameters()
+func (subcommand *SubcommandShow) Parameters() map[string]interface{} {
+	return subcommand.parameters
+}
+
+// DebugFlag()
+func (subcommand *SubcommandShow) DebugFlag() bool {
+	return subcommand.debugFlag
 }

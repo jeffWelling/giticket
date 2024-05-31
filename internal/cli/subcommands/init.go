@@ -17,9 +17,10 @@ func init() {
 }
 
 type SubcommandInit struct {
-	debugFlag bool
-	helpFlag  bool
-	flagset   *flag.FlagSet
+	debugFlag  bool
+	helpFlag   bool
+	flagset    *flag.FlagSet
+	parameters map[string]interface{}
 }
 
 // Execute() is called when this action is invoked
@@ -167,10 +168,18 @@ func (subcommand *SubcommandInit) Help() {
 
 // InitFlags()
 func (subcommand *SubcommandInit) InitFlags(args []string) error {
+	var (
+		debugFlag bool
+		helpFlag  bool
+	)
 	subcommand.flagset = flag.NewFlagSet("init", flag.ExitOnError)
 	subcommand.flagset.BoolVar(&subcommand.debugFlag, "debug", false, "Print debug info")
 	subcommand.flagset.BoolVar(&subcommand.helpFlag, "help", false, "Print help")
 	subcommand.flagset.Parse(args)
+
+	subcommand.parameters = make(map[string]interface{})
+	subcommand.parameters["debugFlag"] = debugFlag
+	subcommand.parameters["helpFlag"] = helpFlag
 
 	// If help
 	if subcommand.helpFlag {
@@ -179,4 +188,12 @@ func (subcommand *SubcommandInit) InitFlags(args []string) error {
 	}
 
 	return nil
+}
+
+func (subcommand *SubcommandInit) DebugFlag() bool {
+	return subcommand.debugFlag
+}
+
+func (subcommand *SubcommandInit) Parameters() map[string]interface{} {
+	return make(map[string]interface{})
 }

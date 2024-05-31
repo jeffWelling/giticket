@@ -1,21 +1,19 @@
 package subcommands
 
-import "sort"
+import (
+	"sort"
 
-var registrySubcommands map[string]SubcommandInterface
+	"github.com/jeffwelling/giticket/pkg/subcommand"
+)
 
-type SubcommandInterface interface {
-	Execute()
-	Help()
-	InitFlags([]string) error
-}
+var registrySubcommands map[string]subcommand.SubcommandInterface
 
 // registerSubcommand() takes a subcommand_name and a subcommand_plugin
 // and register the action_plugin under subcommand_name. Subsequent calls
 // with the same subcommand_name will overwrite the previous registration
-func registerSubcommand(subcommand_name string, action_plugin SubcommandInterface) {
+func registerSubcommand(subcommand_name string, action_plugin subcommand.SubcommandInterface) {
 	if len(registrySubcommands) == 0 {
-		registrySubcommands = make(map[string]SubcommandInterface)
+		registrySubcommands = make(map[string]subcommand.SubcommandInterface)
 	}
 	registrySubcommands[subcommand_name] = action_plugin
 }
@@ -28,7 +26,7 @@ func isAction(subcommand_name string) bool {
 }
 
 // Use the action with the given name by returning it
-func Use(subcommand_name string) SubcommandInterface {
+func Use(subcommand_name string) subcommand.SubcommandInterface {
 	return registrySubcommands[subcommand_name]
 }
 

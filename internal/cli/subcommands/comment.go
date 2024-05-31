@@ -24,22 +24,40 @@ type SubcommandComment struct {
 	comment   string
 	delete    bool
 	debug     bool
+	params    map[string]interface{}
 }
 
 func (subcommand *SubcommandComment) InitFlags(args []string) error {
+	subcommand.params = make(map[string]interface{})
+	var (
+		helpFlag  bool
+		ticketID  int
+		commentID int
+		comment   string
+		delete    bool
+		debugFlag bool
+	)
+
 	subcommand.flagset = flag.NewFlagSet("comment", flag.ExitOnError)
 
-	subcommand.flagset.IntVar(&subcommand.ticketID, "ticketid", 0, "Ticket ID")
-	subcommand.flagset.IntVar(&subcommand.ticketID, "id", 0, "Ticket ID")
-	subcommand.flagset.IntVar(&subcommand.commentID, "commentid", 0, "Comment ID")
-	subcommand.flagset.IntVar(&subcommand.commentID, "cid", 0, "Comment ID")
-	subcommand.flagset.StringVar(&subcommand.comment, "comment", "", "Comment")
-	subcommand.flagset.StringVar(&subcommand.comment, "c", "", "Comment")
-	subcommand.flagset.BoolVar(&subcommand.delete, "d", false, "Delete comment")
-	subcommand.flagset.BoolVar(&subcommand.delete, "delete", false, "Delete comment")
-	subcommand.flagset.BoolVar(&subcommand.debug, "debug", false, "Print debug info")
-	subcommand.flagset.BoolVar(&subcommand.helpFlag, "help", false, "Print help for the comment subcommand")
+	subcommand.flagset.IntVar(&ticketID, "ticketid", 0, "Ticket ID")
+	subcommand.flagset.IntVar(&ticketID, "id", 0, "Ticket ID")
+	subcommand.flagset.IntVar(&commentID, "commentid", 0, "Comment ID")
+	subcommand.flagset.IntVar(&commentID, "cid", 0, "Comment ID")
+	subcommand.flagset.StringVar(&comment, "comment", "", "Comment")
+	subcommand.flagset.StringVar(&comment, "c", "", "Comment")
+	subcommand.flagset.BoolVar(&delete, "d", false, "Delete comment")
+	subcommand.flagset.BoolVar(&delete, "delete", false, "Delete comment")
+	subcommand.flagset.BoolVar(&debugFlag, "debug", false, "Print debug info")
+	subcommand.flagset.BoolVar(&helpFlag, "help", false, "Print help for the comment subcommand")
 	subcommand.flagset.Parse(args)
+
+	subcommand.params["helpFlag"] = helpFlag
+	subcommand.params["ticketID"] = ticketID
+	subcommand.params["commentID"] = commentID
+	subcommand.params["comment"] = comment
+	subcommand.params["delete"] = delete
+	subcommand.params["debug"] = debugFlag
 
 	if subcommand.helpFlag {
 		common.PrintVersion()
@@ -106,4 +124,12 @@ func (subcommand *SubcommandComment) Help() {
 	fmt.Println("        example: giticket comment --ticketid 1 --commentid 1 --delete")
 	fmt.Println("      - name: Add a multi-line comment to ticket with ID #1")
 	fmt.Println("        example: giticket comment --ticketid 1 --comment \"This is a multi-line comment. \n        This is a new line in the same comment\"")
+}
+
+func (subcommand *SubcommandComment) Parameters() map[string]interface{} {
+	return subcommand.params
+}
+
+func (subcommand *SubcommandComment) DebugFlag() bool {
+	return subcommand.debug
 }

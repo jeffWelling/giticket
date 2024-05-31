@@ -23,9 +23,20 @@ type SubcommandLabel struct {
 	label      string
 	deleteFlag bool
 	ticketID   int
+	parameters map[string]interface{}
 }
 
 func (subcommand *SubcommandLabel) InitFlags(args []string) error {
+
+	subcommand.parameters = make(map[string]interface{})
+	var (
+		helpFlag  bool
+		ticketID  int
+		label     string
+		delete    bool
+		debugFlag bool
+	)
+
 	subcommand.flagset = flag.NewFlagSet("label", flag.ExitOnError)
 
 	subcommand.flagset.BoolVar(&subcommand.debugFlag, "debug", false, "Print debug info")
@@ -38,6 +49,12 @@ func (subcommand *SubcommandLabel) InitFlags(args []string) error {
 	subcommand.flagset.IntVar(&subcommand.ticketID, "ticketid", 0, "Ticket ID")
 	subcommand.flagset.IntVar(&subcommand.ticketID, "id", 0, "Ticket ID")
 	subcommand.flagset.Parse(args)
+
+	subcommand.parameters["debugFlag"] = debugFlag
+	subcommand.parameters["helpFlag"] = helpFlag
+	subcommand.parameters["label"] = label
+	subcommand.parameters["deleteFlag"] = delete
+	subcommand.parameters["ticketID"] = ticketID
 
 	if subcommand.helpFlag {
 		common.PrintVersion()
@@ -116,4 +133,14 @@ func (subcommand *SubcommandLabel) Help() {
 	fmt.Println("        example: giticket label --ticketid 1 --label \"my first label\"")
 	fmt.Println("      - name: Delete label \"my first label\" from ticket with ID #1")
 	fmt.Println("        example: giticket label --ticketid 1 --label \"my first label\" --delete")
+}
+
+// Parameters
+func (subcommand *SubcommandLabel) Parameters() map[string]interface{} {
+	return subcommand.parameters
+}
+
+// DebugFlag
+func (subcommand *SubcommandLabel) DebugFlag() bool {
+	return subcommand.debugFlag
 }

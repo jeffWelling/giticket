@@ -2,14 +2,14 @@ package repo
 
 import (
 	git "github.com/jeffwelling/git2go/v37"
+	"github.com/jeffwelling/giticket/pkg/common"
 	"github.com/jeffwelling/giticket/pkg/debug"
-	"github.com/jeffwelling/giticket/pkg/ticket"
 )
 
 // Commit creates a new commit on the branch with the given message, ticket, and
 // author.
 func Commit(
-	t *ticket.Ticket,
+	t common.TicketInterface,
 	thisRepo *git.Repository,
 	branchName string,
 	author *git.Signature,

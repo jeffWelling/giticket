@@ -21,10 +21,27 @@ type SubcommandList struct {
 	debugFlag   bool
 	helpFlag    bool
 	windowWidth int
+	parameters  map[string]interface{}
 }
 
 func (subcommand *SubcommandList) InitFlags(args []string) error {
+	subcommand.parameters = make(map[string]interface{})
+	var (
+		helpFlag  bool
+		window    int
+		debugFlag bool
+	)
 	subcommand.flagset = flag.NewFlagSet("list", flag.ExitOnError)
+
+	subcommand.flagset.BoolVar(&subcommand.debugFlag, "debug", false, "Print debug info")
+	subcommand.flagset.BoolVar(&subcommand.helpFlag, "help", false, "Print help")
+	subcommand.flagset.IntVar(&subcommand.windowWidth, "window", 0, "Window width")
+	subcommand.flagset.IntVar(&subcommand.windowWidth, "w", 0, "Window width")
+	subcommand.flagset.Parse(args)
+
+	subcommand.parameters["debugFlag"] = debugFlag
+	subcommand.parameters["helpFlag"] = helpFlag
+	subcommand.parameters["windowWidth"] = window
 	return nil
 }
 
@@ -135,4 +152,14 @@ func widest(tickets []ticket.Ticket, attr string) int {
 		}
 	}
 	return widest
+}
+
+// Parameters
+func (subcommand *SubcommandList) Parameters() map[string]interface{} {
+	return subcommand.parameters
+}
+
+// DebugFlag
+func (subcommand *SubcommandList) DebugFlag() bool {
+	return subcommand.debugFlag
 }

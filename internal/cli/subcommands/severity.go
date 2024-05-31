@@ -18,14 +18,24 @@ func init() {
 }
 
 type SubcommandSeverity struct {
-	debugFlag bool
-	helpFlag  bool
-	ticketID  int
-	severity  int
-	flagset   *flag.FlagSet
+	flagset    *flag.FlagSet
+	debugFlag  bool
+	helpFlag   bool
+	ticketID   int
+	severity   int
+	parameters map[string]interface{}
 }
 
 func (subcommand *SubcommandSeverity) InitFlags(args []string) error {
+	subcommand.parameters = make(map[string]interface{})
+
+	var (
+		helpFlag  bool
+		ticketID  int
+		severity  int
+		debugFlag bool
+	)
+
 	subcommand.flagset = flag.NewFlagSet("severity", flag.ExitOnError)
 
 	subcommand.flagset.BoolVar(&subcommand.debugFlag, "debug", false, "Print debug info")
@@ -35,6 +45,11 @@ func (subcommand *SubcommandSeverity) InitFlags(args []string) error {
 	subcommand.flagset.IntVar(&subcommand.ticketID, "ticketid", 0, "Ticket ID")
 	subcommand.flagset.IntVar(&subcommand.ticketID, "id", 0, "Ticket ID")
 	subcommand.flagset.Parse(args)
+
+	subcommand.parameters["debugFlag"] = debugFlag
+	subcommand.parameters["helpFlag"] = helpFlag
+	subcommand.parameters["severity"] = severity
+	subcommand.parameters["ticketID"] = ticketID
 
 	if subcommand.helpFlag {
 		common.PrintVersion()
@@ -85,4 +100,14 @@ func (subcommand *SubcommandSeverity) Help() {
 	fmt.Println("    examples:")
 	fmt.Println("      - name: Set severity of ticket with ID #1 to 1")
 	fmt.Println("        example: giticket severity --ticketid 1 --severity 1")
+}
+
+// Parameters
+func (subcommand *SubcommandSeverity) Parameters() map[string]interface{} {
+	return subcommand.parameters
+}
+
+// DebugFlag
+func (subcommand *SubcommandSeverity) DebugFlag() bool {
+	return subcommand.debugFlag
 }
