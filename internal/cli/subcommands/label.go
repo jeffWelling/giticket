@@ -4,10 +4,7 @@ import (
 	"flag"
 	"fmt"
 
-	git "github.com/jeffwelling/git2go/v37"
 	"github.com/jeffwelling/giticket/pkg/common"
-	"github.com/jeffwelling/giticket/pkg/debug"
-	"github.com/jeffwelling/giticket/pkg/repo"
 	"github.com/jeffwelling/giticket/pkg/ticket"
 )
 
@@ -87,36 +84,13 @@ func (subcommand *SubcommandLabel) InitFlags(args []string) error {
 }
 
 func (subcommand *SubcommandLabel) Execute() {
-	branchName := "giticket"
-
-	debug.DebugMessage(subcommand.debugFlag, "Opening git repository")
-	thisRepo, err := git.OpenRepository(".")
-	if err != nil {
-		panic(err)
-	}
-
-	// Get author
-	author := common.GetAuthor(thisRepo)
-
-	tickets, err := ticket.GetListOfTickets(thisRepo, branchName, subcommand.debugFlag)
-	if err != nil {
-		panic(err)
-	}
-	t := ticket.FilterTicketsByID(tickets, subcommand.ticketID)
-
-	if subcommand.deleteFlag {
-		labelID := ticket.DeleteLabel(&t, subcommand.label, thisRepo, branchName, subcommand.debugFlag)
-		err := repo.Commit(&t, thisRepo, branchName, author, "Deleting label "+labelID, subcommand.debugFlag)
-		if err != nil {
-			panic(err)
-		}
-	} else {
-		labelID := ticket.AddLabel(&t, subcommand.label, thisRepo, branchName, subcommand.debugFlag)
-		err := repo.Commit(&t, thisRepo, branchName, author, "Adding label "+labelID, subcommand.debugFlag)
-		if err != nil {
-			panic(err)
-		}
-	}
+	ticket.HandleLabel(
+		common.BranchName,
+		subcommand.label,
+		subcommand.deleteFlag,
+		subcommand.ticketID,
+		subcommand.debugFlag,
+	)
 }
 
 func (subcommand *SubcommandLabel) Help() {

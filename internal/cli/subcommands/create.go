@@ -37,15 +37,14 @@ type SubcommandCreate struct {
 
 // Execute() is called when this subcommand is invoked
 func (subcommand *SubcommandCreate) Execute() {
-	branchName := "giticket"
-
-	debug.DebugMessage(subcommand.DebugFlag(), "Opening git repository")
-	repo, err := git.OpenRepository(".")
-	if err != nil {
-		panic(err)
-	}
-
-	_, filename := ticket.Create(repo, branchName, subcommand)
+	_, filename := ticket.HandleCreate(
+		common.BranchName, time.Now().Unix(),
+		subcommand.title, subcommand.description,
+		subcommand.labels, subcommand.priority,
+		subcommand.severity, subcommand.status,
+		subcommand.comments, subcommand.next_comment_id,
+		subcommand.debugFlag,
+	)
 	fmt.Println("Ticket created: ", filename)
 	return
 }

@@ -4,10 +4,7 @@ import (
 	"flag"
 	"fmt"
 
-	git "github.com/jeffwelling/git2go/v37"
 	"github.com/jeffwelling/giticket/pkg/common"
-	"github.com/jeffwelling/giticket/pkg/debug"
-	"github.com/jeffwelling/giticket/pkg/repo"
 	"github.com/jeffwelling/giticket/pkg/ticket"
 )
 
@@ -76,36 +73,14 @@ func (subcommand *SubcommandComment) InitFlags(args []string) error {
 }
 
 func (subcommand *SubcommandComment) Execute() {
-	branchName := "giticket"
-
-	debug.DebugMessage(subcommand.debug, "Opening git repository")
-	thisRepo, err := git.OpenRepository(".")
-	if err != nil {
-		panic(err)
-	}
-
-	// Get author
-	author := common.GetAuthor(thisRepo)
-
-	tickets, err := ticket.GetListOfTickets(thisRepo, branchName, subcommand.debug)
-	if err != nil {
-		panic(err)
-	}
-	t := ticket.FilterTicketsByID(tickets, subcommand.ticketID)
-
-	if subcommand.delete {
-		commentID := ticket.DeleteComment(&t, subcommand.commentID, thisRepo, branchName, subcommand.debug)
-		err := repo.Commit(&t, thisRepo, branchName, author, "Deleting comment "+commentID, subcommand.debug)
-		if err != nil {
-			panic(err)
-		}
-	} else {
-		commentID := ticket.AddComment(&t, subcommand.comment, thisRepo, branchName, subcommand.debug)
-		err := repo.Commit(&t, thisRepo, branchName, author, "Adding comment "+commentID, subcommand.debug)
-		if err != nil {
-			panic(err)
-		}
-	}
+	ticket.HandleComment(
+		common.BranchName,
+		subcommand.comment,
+		subcommand.commentID,
+		subcommand.ticketID,
+		subcommand.delete,
+		subcommand.debug,
+	)
 }
 
 func (subcommand *SubcommandComment) Help() {

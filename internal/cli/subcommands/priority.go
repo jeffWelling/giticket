@@ -3,12 +3,8 @@ package subcommands
 import (
 	"flag"
 	"fmt"
-	"strconv"
 
-	git "github.com/jeffwelling/git2go/v37"
 	"github.com/jeffwelling/giticket/pkg/common"
-	"github.com/jeffwelling/giticket/pkg/debug"
-	"github.com/jeffwelling/giticket/pkg/repo"
 	"github.com/jeffwelling/giticket/pkg/ticket"
 )
 
@@ -65,24 +61,7 @@ func (subcommand *SubcommandPriority) InitFlags(args []string) error {
 }
 
 func (subcommand *SubcommandPriority) Execute() {
-	branchName := "giticket"
-
-	debug.DebugMessage(subcommand.debugFlag, "Opening git repository")
-	thisRepo, err := git.OpenRepository(".")
-	if err != nil {
-		panic(err)
-	}
-
-	// Get author
-	author := common.GetAuthor(thisRepo)
-
-	tickets, err := ticket.GetListOfTickets(thisRepo, branchName, subcommand.debugFlag)
-	if err != nil {
-		panic(err)
-	}
-	t := ticket.FilterTicketsByID(tickets, subcommand.ticketID)
-	t.Priority = subcommand.priority
-	repo.Commit(&t, thisRepo, branchName, author, "Setting priority of ticket "+strconv.Itoa(t.ID)+" to "+strconv.Itoa(subcommand.priority)+"", subcommand.debugFlag)
+	ticket.HandlePriority(subcommand.ticketID, subcommand.priority, subcommand.debugFlag)
 }
 
 func (subcommand *SubcommandPriority) Help() {

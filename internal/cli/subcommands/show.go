@@ -4,9 +4,7 @@ import (
 	"flag"
 	"fmt"
 
-	git "github.com/jeffwelling/git2go/v37"
 	"github.com/jeffwelling/giticket/pkg/common"
-	"github.com/jeffwelling/giticket/pkg/debug"
 	"github.com/jeffwelling/giticket/pkg/ticket"
 )
 
@@ -25,24 +23,7 @@ type SubcommandShow struct {
 }
 
 func (subcommand *SubcommandShow) Execute() {
-	branchName := "giticket"
-
-	debug.DebugMessage(subcommand.debugFlag, "Opening git repository")
-	thisRepo, err := git.OpenRepository(".")
-	if err != nil {
-		panic(err)
-	}
-
-	if subcommand.helpFlag {
-		return
-	}
-
-	tickets, err := ticket.GetListOfTickets(thisRepo, branchName, subcommand.debugFlag)
-	if err != nil {
-		panic(err)
-	}
-	t := ticket.FilterTicketsByID(tickets, subcommand.ticket_id)
-	ticket.ShowTicket(t, subcommand.output, subcommand.debugFlag)
+	ticket.HandleShow(subcommand.ticket_id, subcommand.output, subcommand.debugFlag, subcommand.helpFlag)
 }
 
 func (subcommand *SubcommandShow) Help() {

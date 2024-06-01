@@ -1,14 +1,12 @@
-package subcommands
+package ticket
 
 import (
 	"strings"
 	"testing"
-
-	"github.com/jeffwelling/giticket/pkg/ticket"
 )
 
 func TestWidest_FindWidestTitle(t *testing.T) {
-	tickets := []ticket.Ticket{
+	tickets := []Ticket{
 		{Title: "a"},                      // 1
 		{Title: "bb"},                     // 2
 		{Title: strings.Repeat("X", 100)}, // 100
@@ -21,7 +19,7 @@ func TestWidest_FindWidestTitle(t *testing.T) {
 }
 
 func TestWidest_FindWidestDescription(t *testing.T) {
-	tickets := []ticket.Ticket{
+	tickets := []Ticket{
 		{Description: "a"},                      // 1
 		{Description: "bb"},                     // 2
 		{Description: strings.Repeat("X", 100)}, // 100

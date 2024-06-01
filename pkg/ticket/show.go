@@ -7,8 +7,32 @@ import (
 	"strings"
 	"time"
 
+	git "github.com/jeffwelling/git2go/v37"
+	"github.com/jeffwelling/giticket/pkg/common"
+	"github.com/jeffwelling/giticket/pkg/debug"
 	"gopkg.in/yaml.v2"
 )
+
+func HandleShow(ticketID int, output string, debugFlag bool, helpFlag bool) error {
+	debug.DebugMessage(debugFlag, "Opening git repository")
+	thisRepo, err := git.OpenRepository(".")
+	if err != nil {
+		return err
+	}
+
+	if helpFlag {
+		return nil
+	}
+
+	tickets, err := GetListOfTickets(thisRepo, common.BranchName, debugFlag)
+	if err != nil {
+		return err
+	}
+	t := FilterTicketsByID(tickets, ticketID)
+	ShowTicket(t, output, debugFlag)
+
+	return nil
+}
 
 func ShowTicket(ticket Ticket, output string, debug bool) {
 	// switch on output type

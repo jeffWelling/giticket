@@ -3,12 +3,8 @@ package subcommands
 import (
 	"flag"
 	"fmt"
-	"strconv"
 
-	git "github.com/jeffwelling/git2go/v37"
 	"github.com/jeffwelling/giticket/pkg/common"
-	"github.com/jeffwelling/giticket/pkg/debug"
-	"github.com/jeffwelling/giticket/pkg/repo"
 	"github.com/jeffwelling/giticket/pkg/ticket"
 )
 
@@ -72,28 +68,7 @@ func (subcommand *SubcommandStatus) InitFlags(args []string) error {
 }
 
 func (subcommand *SubcommandStatus) Execute() {
-	if subcommand.helpFlag {
-		return
-	}
-	branchName := "giticket"
-
-	debug.DebugMessage(subcommand.debugFlag, "Opening git repository")
-	thisRepo, err := git.OpenRepository(".")
-	if err != nil {
-		panic(err)
-	}
-
-	// Get author
-	author := common.GetAuthor(thisRepo)
-
-	tickets, err := ticket.GetListOfTickets(thisRepo, branchName, subcommand.debugFlag)
-	if err != nil {
-		panic(err)
-	}
-	t := ticket.FilterTicketsByID(tickets, subcommand.ticketID)
-
-	t.Status = subcommand.status
-	repo.Commit(&t, thisRepo, branchName, author, "Setting status of ticket "+strconv.Itoa(t.ID)+" to "+subcommand.status, subcommand.debugFlag)
+	ticket.HandleStatus(subcommand.status, subcommand.ticketID, subcommand.helpFlag, subcommand.debugFlag)
 }
 
 func (subcommand *SubcommandStatus) Help() {
