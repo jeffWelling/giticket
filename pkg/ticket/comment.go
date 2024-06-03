@@ -17,6 +17,12 @@ type Comment struct {
 	Author  string
 }
 
+// HandleComment handles the addition or deletion of a comment for a ticket.
+// It takes in the branch name, comment content, comment ID, ticket ID,
+// delete flag, and debug flag as parameters. If the delete flag is true,
+// it deletes the specified comment from the ticket. Otherwise, it adds
+// the comment to the ticket. The function returns the comment ID and an error
+// if there is one.
 func HandleComment(
 	branchName string,
 	comment string,
@@ -24,11 +30,11 @@ func HandleComment(
 	ticketID int,
 	deleteFlag bool,
 	debugFlag bool,
-) {
+) (string, error) {
 	debug.DebugMessage(debugFlag, "Opening git repository")
 	thisRepo, err := git.OpenRepository(".")
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	// Get author
@@ -36,23 +42,26 @@ func HandleComment(
 
 	tickets, err := GetListOfTickets(thisRepo, common.BranchName, debugFlag)
 	if err != nil {
-		panic(err)
+		return "", nil
 	}
 	t := FilterTicketsByID(tickets, ticketID)
 
+	var fullCommentID string
 	if deleteFlag {
-		commentID := DeleteComment(&t, commentID, thisRepo, branchName, debugFlag)
-		err := repo.Commit(&t, thisRepo, branchName, author, "Deleting comment "+commentID, debugFlag)
+		fullCommentID = DeleteComment(&t, commentID, thisRepo, branchName, debugFlag)
+		err := repo.Commit(&t, thisRepo, branchName, author, "Deleting comment "+fullCommentID, debugFlag)
 		if err != nil {
-			panic(err)
+			return "", err
 		}
 	} else {
-		commentID := AddComment(&t, comment, thisRepo, branchName, debugFlag)
-		err := repo.Commit(&t, thisRepo, branchName, author, "Adding comment "+commentID, debugFlag)
+		fullCommentID = AddComment(&t, comment, thisRepo, branchName, debugFlag)
+		err := repo.Commit(&t, thisRepo, branchName, author, "Adding comment "+fullCommentID, debugFlag)
 		if err != nil {
-			panic(err)
+			return "", err
 		}
 	}
+
+	return fullCommentID, nil
 }
 
 func DeleteComment(t *Ticket, commentID int, repo *git.Repository, branchName string, debug bool) string {
