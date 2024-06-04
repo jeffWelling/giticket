@@ -143,7 +143,10 @@ func SaveTicket(t *Ticket, repo *git.Repository, branchName string, debugFlag bo
 
 	// Get author data by reading .git configs
 	debug.DebugMessage(debugFlag, "getting author data")
-	author := common.GetAuthor(repo)
+	author, err := common.GetAuthor(repo)
+	if err != nil {
+		return
+	}
 
 	// commit and update 'giticket' branch
 	debug.DebugMessage(debugFlag, "creating commit")

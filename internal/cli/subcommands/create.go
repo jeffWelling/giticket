@@ -130,7 +130,10 @@ func (subcommand *SubcommandCreate) InitFlags(args []string) error {
 	if err != nil {
 		return err
 	}
-	author := common.GetAuthor(repo)
+	author, err := common.GetAuthor(repo)
+	if err != nil {
+		return err
+	}
 
 	// Handle labels separately to split them into a slice
 	if *labelsFlag != "" {

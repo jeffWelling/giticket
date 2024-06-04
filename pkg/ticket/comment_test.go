@@ -12,7 +12,10 @@ func TestHandleComment(t *testing.T) {
 	common.UseTempDir(t)
 
 	// Initialize git and giticket
-	repo.InitGitAndInitGiticket(t)
+	err := repo.InitGitAndInitGiticket(t)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	testCases := []struct {
 		deleteFlag            bool
@@ -21,15 +24,40 @@ func TestHandleComment(t *testing.T) {
 		ticketID              int
 		debugFlag             bool
 		expectedFullCommentID string
-	}{}
+	}{
+		{
+			deleteFlag:            false,
+			comment:               "test comment 1",
+			commentID:             0,
+			ticketID:              1,
+			debugFlag:             true,
+			expectedFullCommentID: "1-3",
+		},
+		{
+			deleteFlag:            true,
+			comment:               "",
+			commentID:             3,
+			ticketID:              1,
+			debugFlag:             true,
+			expectedFullCommentID: "1-3",
+		},
+		{
+			deleteFlag:            false,
+			comment:               "test comment 2",
+			commentID:             0,
+			ticketID:              1,
+			debugFlag:             true,
+			expectedFullCommentID: "1-4",
+		},
+	}
 
 	for _, tc := range testCases {
-		commentID, err := HandleComment(common.BranchName, tc.comment, tc.commentID, tc.ticketID, tc.debugFlag, tc.deleteFlag)
+		commentID, err := HandleComment(common.BranchName, tc.comment, tc.commentID, tc.ticketID, tc.deleteFlag, tc.debugFlag)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if commentID != tc.expectedFullCommentID {
-			t.Errorf("Expected commentID %s, got %s", tc.expectedFullCommentID, commentID)
+			t.Fatalf("Expected commentID '%s', got '%s'", tc.expectedFullCommentID, commentID)
 		}
 
 		// Check that the comment is actually created/deleted by looking at the
@@ -40,8 +68,8 @@ func TestHandleComment(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if exists != tc.deleteFlag {
-			t.Errorf("Expected comment to exist %t, got %t", tc.deleteFlag, exists)
+		if exists != !tc.deleteFlag {
+			t.Errorf("Expected comment to exist %t, got %t", !tc.deleteFlag, exists)
 		}
 	}
 }

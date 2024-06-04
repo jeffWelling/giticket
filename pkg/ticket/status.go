@@ -26,7 +26,10 @@ func HandleStatus(
 	}
 
 	// Get author
-	author := common.GetAuthor(thisRepo)
+	author, err := common.GetAuthor(thisRepo)
+	if err != nil {
+		return err
+	}
 
 	tickets, err := GetListOfTickets(thisRepo, common.BranchName, debugFlag)
 	if err != nil {

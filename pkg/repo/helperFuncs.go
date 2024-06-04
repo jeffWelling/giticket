@@ -3,8 +3,10 @@ package repo
 import (
 	"errors"
 	"fmt"
+	"os"
 	"slices"
 	"strconv"
+	"strings"
 	"testing"
 
 	git "github.com/jeffwelling/git2go/v37"
@@ -14,12 +16,243 @@ import (
 )
 
 // Create a git repository, and then initialize giticket in that git repository
-func InitGitAndInitGiticket(t *testing.T) {
+// and create a ticket
+func InitGitAndInitGiticket(t *testing.T) error {
+	debugFlag := true
 	// Initialize git
 	_ = common.InitGit(t)
 
+	gitConfigContent := `# This is Git's per-user configuration file.
+[user]
+# Please adapt and uncomment the following lines:
+	name = John Smith
+	email = jsmith@example.com`
+
+	// Write gitConfigContent to ./.gitconfig
+	err := os.WriteFile(".gitconfig", []byte(gitConfigContent), 0644)
+	if err != nil {
+		return err
+	}
+
 	// Initialize the giticket branch
 	HandleInitGiticket(false)
+
+	debug.DebugMessage(debugFlag, "Opening git repository")
+	thisRepo, err := git.OpenRepository(".")
+	if err != nil {
+		return err
+	}
+
+	debug.DebugMessage(debugFlag, "Getting parent commit from branch '"+common.BranchName+"'")
+	parentCommit, err := GetParentCommit(thisRepo, common.BranchName, debugFlag)
+	if err != nil {
+		return err
+	}
+
+	// Get value for .giticket/next_ticket_id
+	tree, err := parentCommit.Tree()
+	if err != nil {
+		return err
+	}
+	defer tree.Free()
+
+	giticketTreeEntry, err := tree.EntryByPath(".giticket")
+	if err != nil {
+		return err
+	}
+
+	// Lookup giticketTreeEntry
+	giticketTree, err := thisRepo.LookupTree(giticketTreeEntry.Id)
+	if err != nil {
+		return err
+	}
+	defer giticketTree.Free()
+
+	NTIDEntry, err := giticketTree.EntryByPath("next_ticket_id")
+	if err != nil {
+		return err
+	}
+
+	NTIDBlob, err := thisRepo.LookupBlob(NTIDEntry.Id)
+	if err != nil {
+		return err
+	}
+	defer NTIDBlob.Free()
+
+	// read value of blob as int
+	s := strings.TrimSpace(string(NTIDBlob.Contents()))
+
+	// Convert string to int
+	ticketID, err := strconv.Atoi(s)
+	if err != nil {
+		return err
+	}
+
+	// Increment ticketID and write it as a blob
+	i := ticketID + 1
+	debug.DebugMessage(debugFlag, "incrementing next ticket ID in .giticket/next_ticket_id, is now: "+strconv.Itoa(i))
+	NTIDBlobOID, err := thisRepo.CreateBlobFromBuffer([]byte(strconv.Itoa(i)))
+	if err != nil {
+		return err
+	}
+	debug.DebugMessage(debugFlag, "NTIDBlobOID: "+NTIDBlobOID.String())
+
+	rootTreeBuilder, previousCommitTree, err := TreeBuilderFromCommit(parentCommit, thisRepo, debugFlag)
+	if err != nil {
+		return err
+	}
+	defer rootTreeBuilder.Free()
+
+	giticketTree, err = GetSubTreeByName(previousCommitTree, thisRepo, ".giticket", debugFlag)
+	if err != nil {
+		return err
+	}
+	defer giticketTree.Free()
+
+	// Create a TreeBuilder from the previous tree for giticket so we can add a
+	// ticket under .gititcket/tickets and change the value of
+	// .giticket/next_ticket_id
+	debug.DebugMessage(debugFlag, "creating tree builder for .giticket tree: "+giticketTree.Id().String())
+	giticketTreeBuilder, err := thisRepo.TreeBuilderFromTree(giticketTree)
+	if err != nil {
+		return err
+	}
+	defer giticketTreeBuilder.Free()
+
+	// Insert the blob for next_ticket_id into the TreeBuilder for giticket
+	// This essentially saves the file to .giticket/next_ticket_id, but we then need to
+	// save the directory to the parent, all the way up to the commit.
+	debug.DebugMessage(debugFlag, "inserting next ticket ID into .giticket/next_ticket_id: "+NTIDBlobOID.String())
+	err = giticketTreeBuilder.Insert("next_ticket_id", NTIDBlobOID, git.FilemodeBlob)
+	if err != nil {
+		return err
+	}
+
+	var giticketTicketsTreeBuilder *git.TreeBuilder
+	_giticketTicketsTreeID := giticketTree.EntryByName("tickets")
+	if _giticketTicketsTreeID == nil {
+		// Create the tickets directory
+
+		// Get a TreeBuilder for .giticket/tickets so we can add the ticket to that
+		// directory
+		debug.DebugMessage(debugFlag, "creating empty tree builder for .giticket/tickets")
+		giticketTicketsTreeBuilder, err = thisRepo.TreeBuilder()
+		if err != nil {
+			return err
+		}
+		defer giticketTicketsTreeBuilder.Free()
+	} else {
+		debug.DebugMessage(debugFlag, "looking up tree for .giticket/tickets: "+_giticketTicketsTreeID.Id.String())
+		giticketTicketsTree, err := thisRepo.LookupTree(_giticketTicketsTreeID.Id)
+		if err != nil {
+			return err
+		}
+		defer giticketTicketsTree.Free()
+
+		debug.DebugMessage(debugFlag, "creating tree builder for .giticket/tickets tree: "+giticketTicketsTree.Id().String())
+		giticketTicketsTreeBuilder, err = thisRepo.TreeBuilderFromTree(giticketTicketsTree)
+		if err != nil {
+			return err
+		}
+	}
+
+	debug.DebugMessage(debugFlag, "creating and populating ticket")
+	// Craft the ticket, but avoid importing 'ticket' due to cyclical
+	// dependencies
+	ticketHereDoc := `title: My first ticket
+description: This is an awesome description.
+labels:
+- bugfix
+- ux
+priority: 1
+severity: 1
+status: open
+comments:
+- id: 1
+  created: 1716538263
+  body: First comment
+  author: John Smith <jsmith@example.com>
+- id: 2
+  created: 1716538445
+  body: Inverted the tardis polarity
+  author: Bob Franks <bfranks@example.com>
+next_comment_id: 3
+id: 1
+created: 1716538263`
+
+	// Write ticket
+	ticketBlobOID, err := thisRepo.CreateBlobFromBuffer([]byte(ticketHereDoc))
+	if err != nil {
+		return err
+	}
+	debug.DebugMessage(debugFlag, "writing ticket to .giticket/tickets: "+ticketBlobOID.String())
+
+	// Add ticket to .giticket/tickets
+	debug.DebugMessage(debugFlag, "adding ticket to .giticket/tickets: "+ticketBlobOID.String())
+	err = giticketTicketsTreeBuilder.Insert("1__My_first_ticket", ticketBlobOID, git.FilemodeBlob)
+	if err != nil {
+		return err
+	}
+
+	// Save the tree and get the tree ID for .giticket/tickets
+	giticketTicketsTreeID, err := giticketTicketsTreeBuilder.Write()
+	if err != nil {
+		return err
+	}
+	debug.DebugMessage(debugFlag, "saving .giticket/tickets:"+giticketTicketsTreeID.String())
+
+	// Add 'ticket' directory to '.giticket' TreeBuilder, to update the
+	// .giticket directory with the new tree for the updated tickets directory
+	debug.DebugMessage(debugFlag, "adding ticket directory to .giticket: "+giticketTicketsTreeID.String())
+	err = giticketTreeBuilder.Insert("tickets", giticketTicketsTreeID, git.FilemodeTree)
+	if err != nil {
+		return err
+	}
+
+	giticketTreeID, err := giticketTreeBuilder.Write()
+	if err != nil {
+		return err
+	}
+	debug.DebugMessage(debugFlag, "saving .giticket tree to root tree: "+giticketTreeID.String())
+
+	// Update the root tree builder with the new .giticket directory
+	debug.DebugMessage(debugFlag, "updating root tree with: "+giticketTreeID.String())
+	err = rootTreeBuilder.Insert(".giticket", giticketTreeID, git.FilemodeTree)
+	if err != nil {
+		return err
+	}
+
+	// Save the new root tree and get the ID so we can lookup the tree for the
+	// commit
+	debug.DebugMessage(debugFlag, "saving root tree")
+	rootTreeBuilderID, err := rootTreeBuilder.Write()
+	if err != nil {
+		return err
+	}
+
+	// Lookup the tree so we can use it in the commit
+	debug.DebugMessage(debugFlag, "lookup root tree for commit: "+rootTreeBuilderID.String())
+	rootTree, err := thisRepo.LookupTree(rootTreeBuilderID)
+	if err != nil {
+		return err
+	}
+	defer rootTree.Free()
+
+	// Get author data by reading .git configs
+	debug.DebugMessage(debugFlag, "getting author data")
+	author, err := common.GetAuthor(thisRepo)
+	if err != nil {
+		return err
+	}
+
+	// commit and update 'giticket' branch
+	debug.DebugMessage(debugFlag, "creating commit")
+	commitID, err := thisRepo.CreateCommit("refs/heads/giticket", author, author, "Creating ticket 1__My_first_ticket", rootTree, parentCommit)
+	if err != nil {
+		return err
+	}
+	debug.DebugMessage(debugFlag, "successfully created commit with ID: "+commitID.String())
+	return nil
 }
 
 // Check whether the comment identified by commentID exists in the branchName,
@@ -31,13 +264,17 @@ func CommentExists(
 	commentID string,
 	debugFlag bool,
 ) (bool, error) {
+	debug.DebugMessage(debugFlag, "Checking if comment with ID "+commentID+" exists in branch "+branchName)
 
 	// Open the git repository
+	debug.DebugMessage(debugFlag, "Opening git repository")
 	thisRepo, err := git.OpenRepository(".")
 	if err != nil {
 		return false, err
 	}
 
+	// Lookup the branch
+	debug.DebugMessage(debugFlag, "Looking up branch: "+branchName)
 	branch, err := thisRepo.LookupBranch(branchName, git.BranchLocal)
 	if err != nil {
 		return false, err
@@ -57,7 +294,8 @@ func CommentExists(
 		return false, err
 	}
 
-	// Get tree from commit
+	// Get root tree from commit
+	debug.DebugMessage(debugFlag, "Getting root tree from commit: "+parentCommit.Id().String())
 	tree, err := parentCommit.Tree()
 	if err != nil {
 		return false, err
@@ -68,25 +306,25 @@ func CommentExists(
 	if giticketSubTreeEntry == nil {
 		return false, errors.New("Subtree 'tickets' not found")
 	}
-	debug.DebugMessage(debugFlag, "Looked up tree entry: "+giticketSubTreeEntry.Id.String())
+	debug.DebugMessage(debugFlag, "Looked up tree entry for giticket: "+giticketSubTreeEntry.Id.String())
 
 	giticketSubTree, err := thisRepo.LookupTree(giticketSubTreeEntry.Id)
 	if err != nil {
 		return false, err
 	}
-	debug.DebugMessage(debugFlag, "Found tree: "+giticketSubTree.Id().String())
+	debug.DebugMessage(debugFlag, "Found giticket tree: "+giticketSubTree.Id().String())
 
-	giticketTicketsSubTreeEntry := tree.EntryByName("tickets")
+	giticketTicketsSubTreeEntry := giticketSubTree.EntryByName("tickets")
 	if giticketTicketsSubTreeEntry == nil {
 		return false, errors.New("Subtree 'tickets' not found")
 	}
-	debug.DebugMessage(debugFlag, "Looked up tree entry: "+giticketTicketsSubTreeEntry.Id.String())
+	debug.DebugMessage(debugFlag, "Looked up giticket tickets tree entry: "+giticketTicketsSubTreeEntry.Id.String())
 
 	giticketTicketsSubTree, err := thisRepo.LookupTree(giticketTicketsSubTreeEntry.Id)
 	if err != nil {
 		return false, err
 	}
-	debug.DebugMessage(debugFlag, "Found tree: "+giticketSubTree.Id().String())
+	debug.DebugMessage(debugFlag, "Found giticket tickets tree: "+giticketTicketsSubTree.Id().String())
 
 	type localComment struct {
 		ID      int
@@ -112,6 +350,7 @@ func CommentExists(
 		t          localTicket
 		commentIDs []string
 	)
+	debug.DebugMessage(debugFlag, "Walking giticket tickets tree")
 	giticketTicketsSubTree.Walk(func(name string, entry *git.TreeEntry) error {
 		ticketFile, err := thisRepo.LookupBlob(entry.Id)
 		if err != nil {
@@ -133,6 +372,12 @@ func CommentExists(
 
 		return nil
 	})
+	debug.DebugMessage(debugFlag, "Finished walking giticket tickets tree")
+
+	//Print commentIDs
+	for _, commentID := range commentIDs {
+		debug.DebugMessage(debugFlag, "Found comment ID: "+commentID)
+	}
 
 	// Check if the comment exists
 	return slices.Contains(commentIDs, commentID), nil

@@ -7,12 +7,12 @@ import (
 	git "github.com/jeffwelling/git2go/v37"
 )
 
-func GetAuthor(repo *git.Repository) *git.Signature {
+func GetAuthor(repo *git.Repository) (*git.Signature, error) {
 	// Load the configuration which merges global, system, and local configs
 	cfg, err := repo.Config()
 	if err != nil {
 		fmt.Println("Error accessing config:", err)
-		panic(err)
+		return nil, err
 	}
 	defer cfg.Free()
 
@@ -20,12 +20,12 @@ func GetAuthor(repo *git.Repository) *git.Signature {
 	name, err := cfg.LookupString("user.name")
 	if err != nil {
 		fmt.Println("Error retrieving user name:", err)
-		panic(err)
+		return nil, err
 	}
 	email, err := cfg.LookupString("user.email")
 	if err != nil {
 		fmt.Println("Error retrieving user email:", err)
-		panic(err)
+		return nil, err
 	}
 
 	// Create a new commit on the branch
@@ -35,5 +35,5 @@ func GetAuthor(repo *git.Repository) *git.Signature {
 		When:  time.Now(),
 	}
 
-	return author
+	return author, nil
 }

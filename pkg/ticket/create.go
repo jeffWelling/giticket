@@ -178,7 +178,10 @@ func HandleCreate(
 
 	// Get author data by reading .git configs
 	debug.DebugMessage(debugFlag, "getting author data")
-	author := common.GetAuthor(thisRepo)
+	author, err := common.GetAuthor(thisRepo)
+	if err != nil {
+		panic(err)
+	}
 
 	// commit and update 'giticket' branch
 	debug.DebugMessage(debugFlag, "creating commit")

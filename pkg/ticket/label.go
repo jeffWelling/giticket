@@ -21,7 +21,10 @@ func HandleLabel(
 	}
 
 	// Get author
-	author := common.GetAuthor(thisRepo)
+	author, err := common.GetAuthor(thisRepo)
+	if err != nil {
+		return err
+	}
 
 	tickets, err := GetListOfTickets(thisRepo, branchName, debugFlag)
 	if err != nil {

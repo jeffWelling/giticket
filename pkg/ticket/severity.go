@@ -17,7 +17,10 @@ func HandleSeverity(ticketID int, severity int, debugFlag bool) error {
 	}
 
 	// Get author
-	author := common.GetAuthor(thisRepo)
+	author, err := common.GetAuthor(thisRepo)
+	if err != nil {
+		panic(err)
+	}
 
 	tickets, err := GetListOfTickets(thisRepo, common.BranchName, debugFlag)
 	if err != nil {

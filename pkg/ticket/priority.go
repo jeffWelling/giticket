@@ -17,7 +17,10 @@ func HandlePriority(ticketID int, priority int, debugFlag bool) error {
 	}
 
 	// Get author
-	author := common.GetAuthor(thisRepo)
+	author, err := common.GetAuthor(thisRepo)
+	if err != nil {
+		return err
+	}
 
 	tickets, err := GetListOfTickets(thisRepo, common.BranchName, debugFlag)
 	if err != nil {

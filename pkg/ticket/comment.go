@@ -31,6 +31,7 @@ func HandleComment(
 	deleteFlag bool,
 	debugFlag bool,
 ) (string, error) {
+	debug.DebugMessage(true, "Handling comment")
 	debug.DebugMessage(debugFlag, "Opening git repository")
 	thisRepo, err := git.OpenRepository(".")
 	if err != nil {
@@ -38,29 +39,41 @@ func HandleComment(
 	}
 
 	// Get author
-	author := common.GetAuthor(thisRepo)
+	debug.DebugMessage(debugFlag, "Getting author")
+	author, err := common.GetAuthor(thisRepo)
+	if err != nil {
+		return "", err
+	}
 
+	debug.DebugMessage(debugFlag, "Getting tickets")
 	tickets, err := GetListOfTickets(thisRepo, common.BranchName, debugFlag)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
+	debug.DebugMessage(debugFlag, "Filtering tickets")
 	t := FilterTicketsByID(tickets, ticketID)
 
 	var fullCommentID string
 	if deleteFlag {
+		debug.DebugMessage(debugFlag, "Deleting comment")
 		fullCommentID = DeleteComment(&t, commentID, thisRepo, branchName, debugFlag)
 		err := repo.Commit(&t, thisRepo, branchName, author, "Deleting comment "+fullCommentID, debugFlag)
 		if err != nil {
 			return "", err
 		}
 	} else {
-		fullCommentID = AddComment(&t, comment, thisRepo, branchName, debugFlag)
-		err := repo.Commit(&t, thisRepo, branchName, author, "Adding comment "+fullCommentID, debugFlag)
+		debug.DebugMessage(debugFlag, "Adding comment")
+		fullCommentID, err = AddComment(&t, comment, thisRepo, branchName, debugFlag)
+		if err != nil {
+			return "", err
+		}
+		err = repo.Commit(&t, thisRepo, branchName, author, "Adding comment "+fullCommentID, debugFlag)
 		if err != nil {
 			return "", err
 		}
 	}
 
+	debug.DebugMessage(debugFlag, "Returning comment ID "+fullCommentID)
 	return fullCommentID, nil
 }
 
@@ -75,8 +88,11 @@ func DeleteComment(t *Ticket, commentID int, repo *git.Repository, branchName st
 	return strconv.Itoa(t.ID) + "-" + strconv.Itoa(commentID)
 }
 
-func AddComment(t *Ticket, comment string, thisRepo *git.Repository, branchName string, debug bool) string {
-	author := common.GetAuthor(thisRepo)
+func AddComment(t *Ticket, comment string, thisRepo *git.Repository, branchName string, debug bool) (string, error) {
+	author, err := common.GetAuthor(thisRepo)
+	if err != nil {
+		return "", err
+	}
 	newComment := Comment{
 		ID:      t.NextCommentID,
 		Created: time.Now().Unix(),
@@ -86,5 +102,5 @@ func AddComment(t *Ticket, comment string, thisRepo *git.Repository, branchName 
 	t.NextCommentID++
 	t.Comments = append(t.Comments, newComment)
 	// Return a string of the ticketID-CommentID
-	return strconv.Itoa(t.ID) + "-" + strconv.Itoa(newComment.ID)
+	return strconv.Itoa(t.ID) + "-" + strconv.Itoa(newComment.ID), nil
 }
