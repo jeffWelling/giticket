@@ -16,6 +16,7 @@ func Commit(
 	commitMessage string,
 	debugFlag bool,
 ) error {
+	debug.DebugMessage(debugFlag, "Starting commit with message: "+commitMessage)
 	// Get the parent commit of the branch
 	debug.DebugMessage(debugFlag, "Getting parent commit from branch '"+branchName+"'")
 	parentCommit, err := GetParentCommit(thisRepo, branchName, debugFlag)

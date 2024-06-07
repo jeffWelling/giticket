@@ -35,7 +35,7 @@ func InitGitAndInitGiticket(t *testing.T) error {
 	}
 
 	// Initialize the giticket branch
-	HandleInitGiticket(false)
+	HandleInitGiticket(debugFlag)
 
 	debug.DebugMessage(debugFlag, "Opening git repository")
 	thisRepo, err := git.OpenRepository(".")
@@ -246,7 +246,7 @@ created: 1716538263`
 	}
 
 	// commit and update 'giticket' branch
-	debug.DebugMessage(debugFlag, "creating commit")
+	debug.DebugMessage(debugFlag, "creating commit with message 'Creating ticket 1__My_first_ticket'")
 	commitID, err := thisRepo.CreateCommit("refs/heads/giticket", author, author, "Creating ticket 1__My_first_ticket", rootTree, parentCommit)
 	if err != nil {
 		return err
@@ -265,66 +265,6 @@ func CommentExists(
 	debugFlag bool,
 ) (bool, error) {
 	debug.DebugMessage(debugFlag, "Checking if comment with ID "+commentID+" exists in branch "+branchName)
-
-	// Open the git repository
-	debug.DebugMessage(debugFlag, "Opening git repository")
-	thisRepo, err := git.OpenRepository(".")
-	if err != nil {
-		return false, err
-	}
-
-	// Lookup the branch
-	debug.DebugMessage(debugFlag, "Looking up branch: "+branchName)
-	branch, err := thisRepo.LookupBranch(branchName, git.BranchLocal)
-	if err != nil {
-		return false, err
-	}
-
-	// Lookup the commit the branch references
-	debug.DebugMessage(debugFlag, "Looking up commit: "+branch.Target().String())
-	parentCommit, err := thisRepo.LookupCommit(branch.Target())
-	if err != nil {
-		return false, err
-	}
-
-	// Get the parent commit of the branch
-	debug.DebugMessage(debugFlag, "Getting parent commit from branch '"+branchName+"'")
-	parentCommit, err = GetParentCommit(thisRepo, branchName, debugFlag)
-	if err != nil {
-		return false, err
-	}
-
-	// Get root tree from commit
-	debug.DebugMessage(debugFlag, "Getting root tree from commit: "+parentCommit.Id().String())
-	tree, err := parentCommit.Tree()
-	if err != nil {
-		return false, err
-	}
-
-	// Get '.gititickets' subtree
-	giticketSubTreeEntry := tree.EntryByName(".giticket")
-	if giticketSubTreeEntry == nil {
-		return false, errors.New("Subtree 'tickets' not found")
-	}
-	debug.DebugMessage(debugFlag, "Looked up tree entry for giticket: "+giticketSubTreeEntry.Id.String())
-
-	giticketSubTree, err := thisRepo.LookupTree(giticketSubTreeEntry.Id)
-	if err != nil {
-		return false, err
-	}
-	debug.DebugMessage(debugFlag, "Found giticket tree: "+giticketSubTree.Id().String())
-
-	giticketTicketsSubTreeEntry := giticketSubTree.EntryByName("tickets")
-	if giticketTicketsSubTreeEntry == nil {
-		return false, errors.New("Subtree 'tickets' not found")
-	}
-	debug.DebugMessage(debugFlag, "Looked up giticket tickets tree entry: "+giticketTicketsSubTreeEntry.Id.String())
-
-	giticketTicketsSubTree, err := thisRepo.LookupTree(giticketTicketsSubTreeEntry.Id)
-	if err != nil {
-		return false, err
-	}
-	debug.DebugMessage(debugFlag, "Found giticket tickets tree: "+giticketTicketsSubTree.Id().String())
 
 	type localComment struct {
 		ID      int
@@ -350,6 +290,12 @@ func CommentExists(
 		t          localTicket
 		commentIDs []string
 	)
+
+	// Open the git repository
+	thisRepo, _, giticketTicketsSubTree, _, err := openGitAndReturnGiticketThings(branchName, debugFlag)
+	if err != nil {
+		return false, err
+	}
 	debug.DebugMessage(debugFlag, "Walking giticket tickets tree")
 	giticketTicketsSubTree.Walk(func(name string, entry *git.TreeEntry) error {
 		ticketFile, err := thisRepo.LookupBlob(entry.Id)
@@ -374,11 +320,124 @@ func CommentExists(
 	})
 	debug.DebugMessage(debugFlag, "Finished walking giticket tickets tree")
 
-	//Print commentIDs
-	for _, commentID := range commentIDs {
-		debug.DebugMessage(debugFlag, "Found comment ID: "+commentID)
-	}
-
 	// Check if the comment exists
 	return slices.Contains(commentIDs, commentID), nil
+}
+
+func TicketExists(
+	ticketFilename string,
+	debugFlag bool,
+) (bool, error) {
+	debug.DebugMessage(debugFlag, "Checking if ticket with filename "+ticketFilename+" exists")
+
+	// Open the git repository
+	_, _, giticketTicketsSubTree, _, err := openGitAndReturnGiticketThings("giticket", true)
+	if err != nil {
+		debug.DebugMessage(debugFlag, "Error opening git and returning giticket things: "+err.Error())
+		return false, err
+	}
+
+	// Print every entry name in giticketTicketsSubTree
+	gotcha := false
+	giticketTicketsSubTree.Walk(func(name string, entry *git.TreeEntry) error {
+		debug.DebugMessage(true, "Found entry: "+entry.Name)
+		if entry.Name == ticketFilename {
+			gotcha = true
+		}
+		return nil
+	})
+
+	if gotcha {
+		return true, nil
+	}
+
+	debug.DebugMessage(debugFlag, "Checking if ticket with filename "+ticketFilename+" exists in .giticket/tickets")
+	fileEntry, err := giticketTicketsSubTree.EntryByPath(ticketFilename)
+	if err != nil {
+		debug.DebugMessage(debugFlag, "Error getting file entry called '"+ticketFilename+"'")
+		return false, err
+	}
+	if fileEntry != nil {
+		debug.DebugMessage(debugFlag, "Error getting file entry called '"+ticketFilename+"', was nil")
+		return false, nil
+	}
+
+	// Print every entry name in giticketTicketsSubTree
+	giticketTicketsSubTree.Walk(func(name string, entry *git.TreeEntry) error {
+		debug.DebugMessage(true, "Found entry: "+entry.Id.String())
+		return nil
+	})
+
+	return true, nil
+}
+
+// Returns:
+// - Pointer to the git repository
+// - A pointer to the git tree for the .giticket sub-tree
+// - A pointer to the git tree for the .giticket/tickets sub-tree
+// - A pointer to the parent commit
+// - An error if something goes wrong
+func openGitAndReturnGiticketThings(branchName string, debugFlag bool) (*git.Repository, *git.Tree, *git.Tree, *git.Commit, error) {
+	debug.DebugMessage(debugFlag, "Opening git and returning giticket things")
+	// Open the git repository
+	debug.DebugMessage(debugFlag, "Opening git repository")
+	thisRepo, err := git.OpenRepository(".")
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	// Lookup the branch
+	debug.DebugMessage(debugFlag, "Looking up branch: "+branchName)
+	branch, err := thisRepo.LookupBranch(branchName, git.BranchLocal)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	// Lookup the commit the branch references
+	debug.DebugMessage(debugFlag, "Looking up commit: "+branch.Target().String())
+	parentCommit, err := thisRepo.LookupCommit(branch.Target())
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	// Get the parent commit of the branch
+	debug.DebugMessage(debugFlag, "Getting parent commit from branch '"+branchName+"'")
+	parentCommit, err = GetParentCommit(thisRepo, branchName, debugFlag)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	// Get root tree from commit
+	debug.DebugMessage(debugFlag, "Getting root tree from commit: "+parentCommit.Id().String())
+	tree, err := parentCommit.Tree()
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	// Get '.gititickets' subtree
+	giticketSubTreeEntry := tree.EntryByName(".giticket")
+	if giticketSubTreeEntry == nil {
+		return nil, nil, nil, nil, errors.New("Subtree '.giticket' not found")
+	}
+	debug.DebugMessage(debugFlag, "Looked up tree entry for giticket: "+giticketSubTreeEntry.Id.String())
+
+	giticketSubTree, err := thisRepo.LookupTree(giticketSubTreeEntry.Id)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	debug.DebugMessage(debugFlag, "Found giticket tree: "+giticketSubTree.Id().String())
+
+	giticketTicketsSubTreeEntry := giticketSubTree.EntryByName("tickets")
+	if giticketTicketsSubTreeEntry == nil {
+		return nil, nil, nil, nil, errors.New("Subtree 'tickets' not found")
+	}
+	debug.DebugMessage(debugFlag, "Looked up giticket tickets tree entry: "+giticketTicketsSubTreeEntry.Id.String())
+
+	giticketTicketsSubTree, err := thisRepo.LookupTree(giticketTicketsSubTreeEntry.Id)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	debug.DebugMessage(debugFlag, "Found giticket tickets tree: "+giticketTicketsSubTree.Id().String())
+
+	return thisRepo, giticketSubTree, giticketTicketsSubTree, parentCommit, nil
 }

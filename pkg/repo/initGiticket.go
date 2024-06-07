@@ -101,7 +101,7 @@ func HandleInitGiticket(debugFlag bool) {
 	}
 
 	// Create a new commit on the branch
-	debug.DebugMessage(debugFlag, "Creating commit")
+	debug.DebugMessage(debugFlag, "Building author")
 	author := &git.Signature{
 		Name:  name,
 		Email: email,
