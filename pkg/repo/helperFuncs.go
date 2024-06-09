@@ -441,3 +441,12 @@ func openGitAndReturnGiticketThings(branchName string, debugFlag bool) (*git.Rep
 
 	return thisRepo, giticketSubTree, giticketTicketsSubTree, parentCommit, nil
 }
+
+func CheckLabel(ticketLabels []string, branchName string, targetLabel string, debugFlag bool) bool {
+	for _, ticketLabel := range ticketLabels {
+		if ticketLabel == targetLabel {
+			return true
+		}
+	}
+	return false
+}
