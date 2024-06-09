@@ -109,6 +109,7 @@ func (subcommand *SubcommandCreate) InitFlags(args []string) error {
 
 	subcommand.flagset.Parse(args)
 
+	subcommand.params = make(map[string]interface{})
 	subcommand.params["helpFlag"] = helpFlag
 	subcommand.params["ticketID"] = ticketID
 	subcommand.params["commentID"] = commentID
