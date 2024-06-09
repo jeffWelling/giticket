@@ -3,6 +3,7 @@ package subcommands
 import (
 	"flag"
 	"fmt"
+	"os"
 
 	"github.com/jeffwelling/giticket/pkg/common"
 	"github.com/jeffwelling/giticket/pkg/ticket"
@@ -43,7 +44,7 @@ func (subcommand *SubcommandList) InitFlags(args []string) error {
 }
 
 func (subcommand *SubcommandList) Execute() {
-	ticket.HandleList(subcommand.debugFlag, common.BranchName, subcommand.windowWidth)
+	ticket.HandleList(subcommand.debugFlag, common.BranchName, subcommand.windowWidth, os.Stdout)
 }
 
 func (subcommand *SubcommandList) Help() {

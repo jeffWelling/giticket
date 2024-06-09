@@ -2,6 +2,7 @@ package ticket
 
 import (
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 
@@ -9,7 +10,7 @@ import (
 	"github.com/jeffwelling/giticket/pkg/debug"
 )
 
-func HandleList(debugFlag bool, branchName string, windowWidth int) error {
+func HandleList(debugFlag bool, branchName string, windowWidth int, w io.Writer) error {
 	debug.DebugMessage(debugFlag, "Opening git repository")
 	thisRepo, err := git.OpenRepository(".")
 	if err != nil {
@@ -21,13 +22,10 @@ func HandleList(debugFlag bool, branchName string, windowWidth int) error {
 	if err != nil {
 		return err
 	}
-	fmt.Print(output)
+	fmt.Fprint(w, output)
 	return nil
 }
 
-// ListTickets() takes a listParams parameter which contains the optional
-// and mandatory parameters for ListTickets(). The only mandatory parameter is
-// windowLength which is the length of the window to list tickets in.
 func ListTickets(thisRepo *git.Repository, branchName string, windowWidth int, debugFlag bool) (string, error) {
 	output := ""
 
