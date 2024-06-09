@@ -3,3 +3,6 @@
 *.swx
 *.swo
 *.swn
+
+# ignore code coverage files
+coverage.txt
