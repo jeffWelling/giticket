@@ -12,7 +12,14 @@ import (
 // Delete the comment from the tree for the ticket with the given ID
 func HandleDelete(ticketID int, branchName string, debugFlag bool) {
 	debug.DebugMessage(debugFlag, "Deleting ticket "+strconv.Itoa(ticketID))
+	deleted, err := deleteTicket(ticketID, branchName, debugFlag)
+	if err != nil {
+		panic(err)
+	}
 
+	if deleted {
+		debug.DebugMessage(debugFlag, "Ticket "+strconv.Itoa(ticketID)+" deleted")
+	}
 }
 
 func deleteTicket(ticketID int, branchName string, debugFlag bool) (bool, error) {
