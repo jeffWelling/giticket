@@ -36,6 +36,12 @@ func (subcommand *SubcommandDelete) InitFlags(args []string) error {
 	subcommand.flagset.IntVar(&ticketID, "id", 0, "Ticket ID")
 	subcommand.flagset.Parse(args)
 
+	subcommand.ticketID = ticketID
+	subcommand.debugFlag = debugFlag
+	subcommand.params["helpFlag"] = helpFlag
+	subcommand.params["ticketID"] = ticketID
+	subcommand.params["debugFlag"] = debugFlag
+
 	// Sanity check
 	if ticketID == 0 {
 		fmt.Println("Error: ticketID is missing but is required to delete a ticket")
@@ -43,9 +49,12 @@ func (subcommand *SubcommandDelete) InitFlags(args []string) error {
 		subcommand.Help()
 	}
 
-	subcommand.params["helpFlag"] = helpFlag
-	subcommand.params["ticketID"] = ticketID
-	subcommand.params["debugFlag"] = debugFlag
+	if helpFlag {
+		common.PrintVersion()
+		fmt.Println("giticket")
+		subcommand.Help()
+	}
+
 	return nil
 }
 
