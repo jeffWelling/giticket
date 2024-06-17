@@ -21,7 +21,7 @@ func HandleCreate(
 	comments []Comment,
 	nextCommentId int,
 	debugFlag bool,
-) (*git.Oid, string) {
+) (int, string) {
 	debug.DebugMessage(debugFlag, "Opening git repository")
 	thisRepo, err := git.OpenRepository(".")
 	if err != nil {
@@ -116,7 +116,6 @@ func HandleCreate(
 	t.ID = ticketID
 	t.Comments = comments
 	t.NextCommentID = nextCommentId
-	// FIXME Add a way to parse comments from initial ticket creation
 
 	// Write ticket
 	ticketBlobOID, err := thisRepo.CreateBlobFromBuffer(t.TicketToYaml())
@@ -185,10 +184,10 @@ func HandleCreate(
 
 	// commit and update 'giticket' branch
 	debug.DebugMessage(debugFlag, "creating commit")
-	commitID, err := thisRepo.CreateCommit("refs/heads/giticket", author, author, "Creating ticket "+t.TicketFilename(), rootTree, parentCommit)
+	_, err = thisRepo.CreateCommit("refs/heads/giticket", author, author, "Creating ticket "+t.TicketFilename(), rootTree, parentCommit)
 	if err != nil {
 		panic(err)
 	}
 
-	return commitID, t.TicketFilename()
+	return ticketID, t.TicketFilename()
 }
