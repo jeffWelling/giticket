@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	git "github.com/jeffwelling/git2go/v37"
+	"github.com/jeffwelling/giticket/pkg/common"
 	"github.com/jeffwelling/giticket/pkg/debug"
 	"gopkg.in/yaml.v2"
 )
@@ -25,6 +26,17 @@ func HandleList(debugFlag bool, branchName string, windowWidth int, w io.Writer)
 	}
 	fmt.Fprint(w, output)
 	return nil
+}
+
+// GetTicketsList takes no parameters and returns a list of tickets
+// It is intended to be used by giticket-webui, GetListOfTickets requires a repo
+// parameter, this creates the repo and calls GetListOfTickets
+func GetTicketsList() ([]Ticket, error) {
+	thisRepo, err := git.OpenRepository(".")
+	if err != nil {
+		return nil, err
+	}
+	return GetListOfTickets(thisRepo, common.BranchName, false)
 }
 
 func ListTickets(thisRepo *git.Repository, branchName string, windowWidth int, debugFlag bool) (string, error) {

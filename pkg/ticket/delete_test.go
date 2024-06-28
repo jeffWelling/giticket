@@ -30,7 +30,7 @@ func TestHandleDelete(t *testing.T) {
 	for _, tc := range testCases {
 		if tc.ticketID == 0 {
 			// Create a ticket for testing
-			ticketID, _ := HandleCreate(
+			ticketID, _, _ := HandleCreate(
 				common.BranchName,
 				time.Now().Unix(),
 				"test ticket",

@@ -57,7 +57,7 @@ func TestHandleCreate(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		_, ticketFilename := HandleCreate(
+		_, ticketFilename, err := HandleCreate(
 			tc.branchName,
 			tc.created,
 			tc.title,
@@ -70,6 +70,9 @@ func TestHandleCreate(t *testing.T) {
 			tc.nextCommentId,
 			tc.debugFlag,
 		)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		exists, err := repo.TicketExists(ticketFilename, tc.debugFlag)
 		if err != nil {

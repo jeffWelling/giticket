@@ -13,18 +13,18 @@ func HandleSeverity(ticketID int, severity int, debugFlag bool) error {
 	debug.DebugMessage(debugFlag, "Opening git repository")
 	thisRepo, err := git.OpenRepository(".")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	// Get author
 	author, err := common.GetAuthor(thisRepo)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	tickets, err := GetListOfTickets(thisRepo, common.BranchName, debugFlag)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	t := FilterTicketsByID(tickets, ticketID)
 	t.Severity = severity

@@ -37,7 +37,7 @@ type SubcommandCreate struct {
 
 // Execute() is called when this subcommand is invoked
 func (subcommand *SubcommandCreate) Execute() {
-	_, filename := ticket.HandleCreate(
+	_, filename, err := ticket.HandleCreate(
 		common.BranchName, time.Now().Unix(),
 		subcommand.title, subcommand.description,
 		subcommand.labels, subcommand.priority,
@@ -45,6 +45,10 @@ func (subcommand *SubcommandCreate) Execute() {
 		subcommand.comments, subcommand.next_comment_id,
 		subcommand.debugFlag,
 	)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	fmt.Println("Ticket created: ", filename)
 	return
 }
