@@ -1,2 +1,2 @@
 package common
-const Version = "0.2.24"
+const Version = "0.2.25"
