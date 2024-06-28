@@ -9,7 +9,7 @@ Giticket is a ticketing tool written in golang that allows you to store tickets 
 ## Install
 
 ```bash
-go install github.com/jeffwelling/giticket/cmd/giticket@v0.1.1
+go install github.com/jeffwelling/giticket/cmd/giticket@latest
 ```
 
 This will install giticket to $GOPATH/bin, make sure it is in your $PATH.
