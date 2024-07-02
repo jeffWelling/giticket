@@ -9,6 +9,9 @@ import (
 	"github.com/jeffwelling/giticket/pkg/debug"
 )
 
+// HandleInitGiticket takes a boolean flag, it assumes that the current
+// directory already contains a git repository and initializes the giticket by
+// creating a new branch. If any errors are encountered, it will panic.
 func HandleInitGiticket(debugFlag bool) {
 	// Open an existing repository in the current directory
 	debug.DebugMessage(debugFlag, "Opening git repository '.'")

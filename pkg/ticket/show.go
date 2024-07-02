@@ -13,6 +13,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// HandleShow is used to print a list of giticket tickets in a number of formats
 func HandleShow(ticketID int, output string, debugFlag bool, helpFlag bool) error {
 	debug.DebugMessage(debugFlag, "Opening git repository")
 	thisRepo, err := git.OpenRepository(".")
@@ -34,6 +35,8 @@ func HandleShow(ticketID int, output string, debugFlag bool, helpFlag bool) erro
 	return nil
 }
 
+// ShowTicket takes a ticket, an output type, and a debug flag and prints the
+// ticket details in the given format.
 func ShowTicket(ticket Ticket, output string, debug bool) {
 	// switch on output type
 	switch output {
@@ -48,6 +51,7 @@ func ShowTicket(ticket Ticket, output string, debug bool) {
 	}
 }
 
+// ShowTicketsText is used to print a list of giticket tickets in text format
 func ShowTicketsText(t Ticket, debug bool) {
 	fmt.Println("ID: " + strconv.Itoa(t.ID))
 	fmt.Println("Title: " + t.Title)
@@ -68,6 +72,7 @@ func ShowTicketsText(t Ticket, debug bool) {
 	fmt.Println("")
 }
 
+// ShowTicketsYaml is used to print a list of giticket tickets in yaml format
 func ShowTicketsYaml(t Ticket, debug bool) {
 	// turn the ticket into a yaml string
 	yamlTicket, err := yaml.Marshal(t)
@@ -77,6 +82,7 @@ func ShowTicketsYaml(t Ticket, debug bool) {
 	fmt.Println(string(yamlTicket))
 }
 
+// ShowTicketsJson is used to print a list of giticket tickets in json format
 func ShowTicketsJson(t Ticket, debug bool) {
 	// turn the ticket into a json string
 	jsonTicket, err := json.Marshal(t)

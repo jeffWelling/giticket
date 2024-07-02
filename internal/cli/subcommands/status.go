@@ -8,11 +8,14 @@ import (
 	"github.com/jeffwelling/giticket/pkg/ticket"
 )
 
+// init registers the status subcommand
 func init() {
 	subcommand := new(SubcommandStatus)
 	registerSubcommand("status", subcommand)
 }
 
+// SubcommandStatus implements SubcommandInterface and extends it with
+// attributes common to the status subcommand
 type SubcommandStatus struct {
 	flagset    *flag.FlagSet
 	debugFlag  bool
@@ -22,6 +25,7 @@ type SubcommandStatus struct {
 	parameters map[string]interface{}
 }
 
+// InitFlags sets up the flags for the status subcommand, parses flags, and returns any errors
 func (subcommand *SubcommandStatus) InitFlags(args []string) error {
 	subcommand.parameters = make(map[string]interface{})
 	var (
@@ -67,10 +71,12 @@ func (subcommand *SubcommandStatus) InitFlags(args []string) error {
 	return nil
 }
 
+// Execute is used to set the status of a ticket when the status subcommand is used from the CLI
 func (subcommand *SubcommandStatus) Execute() {
 	ticket.HandleStatus(subcommand.status, subcommand.ticketID, subcommand.helpFlag, subcommand.debugFlag)
 }
 
+// Help prints help information for the status subcommand
 func (subcommand *SubcommandStatus) Help() {
 	fmt.Println("  status - Set ticket status")
 	fmt.Println("    eg. giticket status [parameters]")

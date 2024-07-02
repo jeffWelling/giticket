@@ -1,3 +1,6 @@
+/*
+Package subcommands provides modularized subcommands for giticket's CLI interface.
+*/
 package subcommands
 
 import (
@@ -6,11 +9,15 @@ import (
 	"github.com/jeffwelling/giticket/pkg/subcommand"
 )
 
+// registrySubcommands is a registry of the available subcommands in a map, the
+// key is the name of the subcommand and the value implements
+// SubcommandInterface
 var registrySubcommands map[string]subcommand.SubcommandInterface
 
 // registerSubcommand() takes a subcommand_name and a subcommand_plugin
-// and register the action_plugin under subcommand_name. Subsequent calls
-// with the same subcommand_name will overwrite the previous registration
+// and register the action_plugin under subcommand_name in registrySubcommands.
+// Subsequent calls with the same subcommand_name will overwrite the previous
+// registration.
 func registerSubcommand(subcommand_name string, action_plugin subcommand.SubcommandInterface) {
 	if len(registrySubcommands) == 0 {
 		registrySubcommands = make(map[string]subcommand.SubcommandInterface)
@@ -31,7 +38,7 @@ func Use(subcommand_name string) subcommand.SubcommandInterface {
 }
 
 // ListSubcommand returns a list of strings which are the names
-// of the available actions.
+// of the available actions in registrySubcommands.
 func ListSubcommand() []string {
 	keys := make([]string, 0, len(registrySubcommands))
 	for k := range registrySubcommands {

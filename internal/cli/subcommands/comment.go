@@ -8,11 +8,14 @@ import (
 	"github.com/jeffwelling/giticket/pkg/ticket"
 )
 
+// Register the comment subcommand
 func init() {
 	subcommand := new(SubcommandComment)
 	registerSubcommand("comment", subcommand)
 }
 
+// A SubcommandComment implements SubcommandInterface, extending it to
+// include attributes specific to the comment subcommand
 type SubcommandComment struct {
 	flagset   *flag.FlagSet
 	helpFlag  bool
@@ -24,6 +27,8 @@ type SubcommandComment struct {
 	params    map[string]interface{}
 }
 
+// InitFlags sets up flags the command subcommand, parses flags, and returns any
+// errors.
 func (subcommand *SubcommandComment) InitFlags(args []string) error {
 	subcommand.params = make(map[string]interface{})
 	var (
@@ -72,6 +77,8 @@ func (subcommand *SubcommandComment) InitFlags(args []string) error {
 	return nil
 }
 
+// Execute is used to add a comment when the comment subcommand is used from the
+// CLI
 func (subcommand *SubcommandComment) Execute() {
 	ticket.HandleComment(
 		common.BranchName,
@@ -83,6 +90,8 @@ func (subcommand *SubcommandComment) Execute() {
 	)
 }
 
+// Help prints information for the comment subcommand, it is called from CLI
+// Exec() if the user uses the --help flag with the comment subcommand
 func (subcommand *SubcommandComment) Help() {
 	fmt.Println("  comment - Add or remove a comment from a ticket")
 	fmt.Println("    eg: giticket comment [parameters]")

@@ -8,11 +8,14 @@ import (
 	"github.com/jeffwelling/giticket/pkg/ticket"
 )
 
+// init registers the show subcommand
 func init() {
 	subcommand := new(SubcommandShow)
 	registerSubcommand("show", subcommand)
 }
 
+// SubcommandShow implements SubcommandInterface and extends it with
+// attributes common to the show subcommand
 type SubcommandShow struct {
 	debugFlag  bool
 	helpFlag   bool
@@ -22,10 +25,12 @@ type SubcommandShow struct {
 	parameters map[string]interface{}
 }
 
+// Execute is used to show a ticket when the user uses the show subcommand from the CLI
 func (subcommand *SubcommandShow) Execute() {
 	ticket.HandleShow(subcommand.ticket_id, subcommand.output, subcommand.debugFlag, subcommand.helpFlag)
 }
 
+// Help prints help information for the show subcommand
 func (subcommand *SubcommandShow) Help() {
 	fmt.Println("  show - Show ticket")
 	fmt.Println("    eg: giticket show [parameters]")
@@ -40,6 +45,8 @@ func (subcommand *SubcommandShow) Help() {
 
 }
 
+// InitFlags is used to initialize the flags for the show subcommand, parse
+// them, and return any errors
 func (subcommand *SubcommandShow) InitFlags(args []string) error {
 	subcommand.parameters = make(map[string]interface{})
 	var (

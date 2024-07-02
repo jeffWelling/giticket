@@ -8,11 +8,14 @@ import (
 	"github.com/jeffwelling/giticket/pkg/ticket"
 )
 
+// init registers the priority subcommand
 func init() {
 	subcommand := new(SubcommandPriority)
 	registerSubcommand("priority", subcommand)
 }
 
+// SubcommandPriority implements SubcommandInterface and extends it with
+// attributes common to the priority subcommand
 type SubcommandPriority struct {
 	flagset    *flag.FlagSet
 	debugFlag  bool
@@ -22,6 +25,7 @@ type SubcommandPriority struct {
 	parameters map[string]interface{}
 }
 
+// InitFlags sets up the flags for the priority subcommand, parses flags, and returns any errors
 func (subcommand *SubcommandPriority) InitFlags(args []string) error {
 	subcommand.parameters = make(map[string]interface{})
 	var (
@@ -60,10 +64,13 @@ func (subcommand *SubcommandPriority) InitFlags(args []string) error {
 	return nil
 }
 
+// Execute executes the priority subcommand when the priority subcommand is used
+// from the CLI
 func (subcommand *SubcommandPriority) Execute() {
 	ticket.HandlePriority(subcommand.ticketID, subcommand.priority, subcommand.debugFlag)
 }
 
+// Help prints help information for the priority subcommand
 func (subcommand *SubcommandPriority) Help() {
 	fmt.Println("  priority - Set priority")
 	fmt.Println("    eg: giticket priority [parameters]")

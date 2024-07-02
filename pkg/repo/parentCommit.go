@@ -7,8 +7,9 @@ import (
 	"github.com/jeffwelling/giticket/pkg/debug"
 )
 
-// Take a repo and a branch name, lookup the branch name and return the parent
-// commit
+// GetParentCommit takes a pointer to a git repository and a branch name and
+// debugFlag, and returns a pointer to the commit at the tip of branchName. It
+// returns a pointer to that commit and an error if there was one.
 func GetParentCommit(repo *git.Repository, branchName string, debugFlag bool) (*git.Commit, error) {
 	// Find the branch and its target commit
 	debug.DebugMessage(debugFlag, "Looking up branch: "+branchName)
@@ -27,8 +28,9 @@ func GetParentCommit(repo *git.Repository, branchName string, debugFlag bool) (*
 	return parentCommit, nil
 }
 
-// Take a git commit, and return a tree builder for the tree the commit points
-// to, the tree builder must be freed when done
+// TreeBuilderFromCommit takes a pointer to a git commit and a pointer to a git
+// repository and a debugFlag. It looks up the tree from the commit and returns
+// a pointer to a treeBuilder from that commit with an error if there was one.
 func TreeBuilderFromCommit(commit *git.Commit, thisRepo *git.Repository, debugFlag bool) (*git.TreeBuilder, *git.Tree, error) {
 	debug.DebugMessage(debugFlag, "Looking up tree from parent commit, tree ID: "+commit.TreeId().String())
 	previousCommitTree, err := commit.Tree()
@@ -45,8 +47,9 @@ func TreeBuilderFromCommit(commit *git.Commit, thisRepo *git.Repository, debugFl
 	return rootTreeBuilder, previousCommitTree, nil
 }
 
-// Take a tree, a repo, and an entry name for a sub-tree, and return the
-// sub-tree
+// GetSubTreeByName takes a pointer to a git tree, a pointer to a git repository
+// and a sub-tree name and a debugFlag. It returns a pointer to the sub-tree
+// with the given name and an error if there was one.
 func GetSubTreeByName(parentTree *git.Tree, repo *git.Repository, subTreeName string, debugFlag bool) (*git.Tree, error) {
 	subTreeEntry := parentTree.EntryByName(subTreeName)
 	if subTreeEntry == nil {

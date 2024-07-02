@@ -8,11 +8,14 @@ import (
 	"github.com/jeffwelling/giticket/pkg/ticket"
 )
 
+// init registers the label subcommand
 func init() {
 	subcommand := new(SubcommandLabel)
 	registerSubcommand("label", subcommand)
 }
 
+// SubcommandLabel implements SubcommandInterface and extends it with attributes
+// specific to the label subcommand
 type SubcommandLabel struct {
 	flagset    *flag.FlagSet
 	debugFlag  bool
@@ -23,6 +26,8 @@ type SubcommandLabel struct {
 	parameters map[string]interface{}
 }
 
+// InitFlags sets up the flags specific to the label subcommand, parses the
+// flags, and returns any errors
 func (subcommand *SubcommandLabel) InitFlags(args []string) error {
 
 	subcommand.parameters = make(map[string]interface{})
@@ -83,6 +88,8 @@ func (subcommand *SubcommandLabel) InitFlags(args []string) error {
 	return nil
 }
 
+// Execute is used to add a label when the label subcommand is used from the
+// CLI
 func (subcommand *SubcommandLabel) Execute() {
 	ticket.HandleLabel(
 		common.BranchName,
@@ -93,6 +100,7 @@ func (subcommand *SubcommandLabel) Execute() {
 	)
 }
 
+// Help prints help information for the label subcommand
 func (subcommand *SubcommandLabel) Help() {
 	fmt.Println("  label - Add or delete labels")
 	fmt.Println("    eg: giticket label [params]")

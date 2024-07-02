@@ -8,11 +8,14 @@ import (
 	"github.com/jeffwelling/giticket/pkg/ticket"
 )
 
+// init is used to register the delete subcommand
 func init() {
 	subcommand := new(SubcommandDelete)
 	registerSubcommand("delete", subcommand)
 }
 
+// SubcommandDelete implements SubcommandInterface and extends it with
+// attributes common to the delete subcommand
 type SubcommandDelete struct {
 	flagset   *flag.FlagSet
 	params    map[string]interface{}
@@ -20,6 +23,7 @@ type SubcommandDelete struct {
 	debugFlag bool
 }
 
+// InitFlags sets up the flags for the delete subcommand, parses flags, and returns any errors
 func (subcommand *SubcommandDelete) InitFlags(args []string) error {
 	subcommand.params = make(map[string]interface{})
 	var (
@@ -58,10 +62,13 @@ func (subcommand *SubcommandDelete) InitFlags(args []string) error {
 	return nil
 }
 
+// Execute is used to delete a ticket when the user uses the delete subcommand
+// from the CLI
 func (subcommand *SubcommandDelete) Execute() {
 	ticket.HandleDelete(subcommand.ticketID, common.BranchName, subcommand.debugFlag)
 }
 
+// Help prints help information for the delete subcommand
 func (subcommand *SubcommandDelete) Help() {
 	fmt.Println("  delete - Delete ticket from the tree")
 	fmt.Println("    eg: giticket delete [parameters]")

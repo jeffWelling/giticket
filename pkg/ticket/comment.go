@@ -10,6 +10,8 @@ import (
 	"github.com/jeffwelling/giticket/pkg/repo"
 )
 
+// A comment for a giticket ticket
+// The fields must be filled in to populate details of the ticket
 type Comment struct {
 	ID      int
 	Created int64
@@ -77,6 +79,9 @@ func HandleComment(
 	return fullCommentID, nil
 }
 
+// DeleteComment removes the comment identified by commentID from ticket t under
+// the repo and branchName provided with a debug flag. It returns a string
+// representing the unique ID of the deleted comment.
 func DeleteComment(t *Ticket, commentID int, repo *git.Repository, branchName string, debug bool) string {
 	updatedComments := []Comment{}
 	for _, comment := range t.Comments {
@@ -88,6 +93,9 @@ func DeleteComment(t *Ticket, commentID int, repo *git.Repository, branchName st
 	return strconv.Itoa(t.ID) + "-" + strconv.Itoa(commentID)
 }
 
+// AddComment adds a comment to ticket t under the repo and branchName provided
+// with a debug flag. It returns a string representing the unique ID of the added
+// comment and an error if there is was one.
 func AddComment(t *Ticket, comment string, thisRepo *git.Repository, branchName string, debug bool) (string, error) {
 	author, err := common.GetAuthor(thisRepo)
 	if err != nil {

@@ -13,6 +13,8 @@ func init() {
 	registerSubcommand("init", subcommand)
 }
 
+// SubcommandInit implements SubcommandInterface and extends it with
+// attributes common to the init subcommand
 type SubcommandInit struct {
 	debugFlag  bool
 	helpFlag   bool
@@ -20,12 +22,13 @@ type SubcommandInit struct {
 	parameters map[string]interface{}
 }
 
-// Execute() is called when this action is invoked
+// Execute creates a new branch called 'giticket' and creates an initial commit
+// when the init subcommand is called from the CLI
 func (subcommand *SubcommandInit) Execute() {
 	repo.HandleInitGiticket(subcommand.debugFlag)
 }
 
-// Help() prints help for this action
+// Help prints help information for the init subcommand
 func (subcommand *SubcommandInit) Help() {
 	fmt.Println("  init - Initialize giticket")
 	fmt.Println("    eg: giticket init")
@@ -37,7 +40,7 @@ func (subcommand *SubcommandInit) Help() {
 	fmt.Println("        example: giticket init")
 }
 
-// InitFlags()
+// InitFlags initializes the flags for the init subcommand, parses flags, and returns any errors
 func (subcommand *SubcommandInit) InitFlags(args []string) error {
 	var (
 		debugFlag bool

@@ -9,11 +9,14 @@ import (
 	"github.com/jeffwelling/giticket/pkg/ticket"
 )
 
+// init registers the list subcommand
 func init() {
 	subcommand := new(SubcommandList)
 	registerSubcommand("list", subcommand)
 }
 
+// SubcommandList implements SubcommandInterface and extends it with
+// attributes common to the list subcommand
 type SubcommandList struct {
 	flagset     *flag.FlagSet
 	debugFlag   bool
@@ -22,6 +25,7 @@ type SubcommandList struct {
 	parameters  map[string]interface{}
 }
 
+// InitFlags sets up the flags for the list subcommand, parses flags, and returns any errors
 func (subcommand *SubcommandList) InitFlags(args []string) error {
 	subcommand.parameters = make(map[string]interface{})
 	var (
@@ -43,10 +47,12 @@ func (subcommand *SubcommandList) InitFlags(args []string) error {
 	return nil
 }
 
+// Execute is used to list tickets when the user uses the list subcommand from the CLI
 func (subcommand *SubcommandList) Execute() {
 	ticket.HandleList(subcommand.debugFlag, common.BranchName, subcommand.windowWidth, os.Stdout)
 }
 
+// Help prints help information for the list subcommand
 func (subcommand *SubcommandList) Help() {
 	fmt.Println("  list - List tickets")
 	fmt.Println("    eg: giticket list [params]")

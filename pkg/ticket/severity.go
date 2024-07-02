@@ -9,6 +9,7 @@ import (
 	"github.com/jeffwelling/giticket/pkg/repo"
 )
 
+// HandleSeverity sets the severity of a giticket ticket
 func HandleSeverity(ticketID int, severity int, debugFlag bool) error {
 	debug.DebugMessage(debugFlag, "Opening git repository")
 	thisRepo, err := git.OpenRepository(".")

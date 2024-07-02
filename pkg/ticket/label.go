@@ -7,6 +7,8 @@ import (
 	"github.com/jeffwelling/giticket/pkg/repo"
 )
 
+// HandleLabel handles adding or deleting a label from a ticket based on the
+// value of deleteFlag, returning an error if there was one.
 func HandleLabel(
 	branchName string,
 	label string,

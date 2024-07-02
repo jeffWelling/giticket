@@ -8,9 +8,9 @@ import (
 	git "github.com/jeffwelling/git2go/v37"
 )
 
-// Create a temporary directory by calling testing.T.TempDir()
-// then cd into the directory for the purposes of running tests
-// from within that directory.
+// UseTempDir takes a pointer to a testing T, it gets the temp directory for
+// this test from T.TempDir(), and cd's into it. If there's an error, it
+// fails the test.
 func UseTempDir(t *testing.T) {
 	// Create a temporary directory
 	tempDir := t.TempDir()
@@ -23,10 +23,10 @@ func UseTempDir(t *testing.T) {
 	}
 }
 
-// Create a git repository in the current directory
-// for use with testing, returns the commit ID
+// InitGit takes a pointer to a testing T, it initializes a git repository in
+// the current directory and returns a pointer to the first commit ID. If there
+// is an error, it fails the test.
 func InitGit(t *testing.T) *git.Oid {
-
 	// https://libgit2.org/libgit2/#HEAD/group/repository/git_repository_init
 	// `false` here means the .git directory will be created
 	repo, err := git.InitRepository(".", false)

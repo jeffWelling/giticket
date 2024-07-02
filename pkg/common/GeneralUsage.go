@@ -4,6 +4,7 @@ import (
 	"fmt"
 )
 
+// PrintGeneralUsage prints the general usage information for giticket
 func PrintGeneralUsage() {
 	fmt.Println("Giticket is a git based bug tracker written in golang.")
 	PrintVersion()
@@ -20,6 +21,7 @@ func PrintGeneralUsage() {
 	fmt.Println("giticket -version         will print the version of giticket")
 }
 
+// PrintVersion prints giticket's version
 func PrintVersion() {
 	fmt.Println("Giticket Version: " + Version)
 }

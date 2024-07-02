@@ -9,6 +9,7 @@ import (
 	"github.com/jeffwelling/giticket/pkg/repo"
 )
 
+// HandlePriority sets the priority of a giticket ticket
 func HandlePriority(ticketID int, priority int, debugFlag bool) error {
 	debug.DebugMessage(debugFlag, "Opening git repository")
 	thisRepo, err := git.OpenRepository(".")

@@ -13,12 +13,14 @@ import (
 	"github.com/jeffwelling/giticket/pkg/ticket"
 )
 
-// init() is used to register this subcommand
+// init is used to register the create subcommand
 func init() {
 	subcommand := new(SubcommandCreate)
 	registerSubcommand("create", subcommand)
 }
 
+// SubcommandCreate implements the SubcommandInterface and extends it with
+// attributes specific to the create subcommand
 type SubcommandCreate struct {
 	title           string
 	description     string
@@ -35,7 +37,7 @@ type SubcommandCreate struct {
 	params          map[string]interface{}
 }
 
-// Execute() is called when this subcommand is invoked
+// Execute creates a new ticket when the user uses the create subcommand
 func (subcommand *SubcommandCreate) Execute() {
 	_, filename, err := ticket.HandleCreate(
 		common.BranchName, time.Now().Unix(),
@@ -50,10 +52,9 @@ func (subcommand *SubcommandCreate) Execute() {
 		return
 	}
 	fmt.Println("Ticket created: ", filename)
-	return
 }
 
-// Help() prints help for this subcommand
+// Help prints help information for the create subcommand
 func (subcommand *SubcommandCreate) Help() {
 	fmt.Println("  create - Create a new ticket")
 	fmt.Println("    eg: giticket create [parameters]")
@@ -82,7 +83,7 @@ func (subcommand *SubcommandCreate) Help() {
 	fmt.Println("        example: giticket create --title \"Ticket Title\" --comments '[{\"Body\":\"My comment\", \"Author\": \"John Smith <smith@example.com>\"}, {\"Body\":\"My second comment\", \"Author\": \"John Smith <smith@example.com>\", \"Created\": 1816534799}]'")
 }
 
-// InitFlags()
+// InitFlags sets up the flags for the create subcommand, parses flags, and returns any errors
 func (subcommand *SubcommandCreate) InitFlags(args []string) error {
 	var (
 		helpFlag  bool

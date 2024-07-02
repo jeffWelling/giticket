@@ -8,11 +8,14 @@ import (
 	"github.com/jeffwelling/giticket/pkg/ticket"
 )
 
+// init registers the severity subcommand
 func init() {
 	subcommand := new(SubcommandSeverity)
 	registerSubcommand("severity", subcommand)
 }
 
+// SubcommandSeverity implements SubcommandInterface and extends it with
+// attributes common to the severity subcommand
 type SubcommandSeverity struct {
 	flagset    *flag.FlagSet
 	debugFlag  bool
@@ -22,6 +25,7 @@ type SubcommandSeverity struct {
 	parameters map[string]interface{}
 }
 
+// InitFlags sets up the flags for the severity subcommand, parses flags, and returns any errors
 func (subcommand *SubcommandSeverity) InitFlags(args []string) error {
 	subcommand.parameters = make(map[string]interface{})
 
@@ -63,10 +67,12 @@ func (subcommand *SubcommandSeverity) InitFlags(args []string) error {
 	return nil
 }
 
+// Execute sets the severity for the ticket when the severity subcommand is used from the CLI
 func (subcommand *SubcommandSeverity) Execute() {
 	ticket.HandleSeverity(subcommand.ticketID, subcommand.severity, subcommand.debugFlag)
 }
 
+// Help prints help information for the severity subcommand
 func (subcommand *SubcommandSeverity) Help() {
 	fmt.Println("  severity - Set severity")
 	fmt.Println("    eg: giticket severity [parameters]")

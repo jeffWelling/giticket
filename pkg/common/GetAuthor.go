@@ -7,6 +7,9 @@ import (
 	git "github.com/jeffwelling/git2go/v37"
 )
 
+// GetAuthor takes a pointer to a git repository and looks up author details
+// from the git configuration, returning a pointer to a git signature and an
+// error if there was one.
 func GetAuthor(repo *git.Repository) (*git.Signature, error) {
 	// Load the configuration which merges global, system, and local configs
 	cfg, err := repo.Config()

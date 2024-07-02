@@ -1,3 +1,9 @@
+/*
+Package cli implements the command line interface for giticket
+
+Exec() is the main entry point for giticket, where it calls out to the subcommand
+after parsing the command line arguments.
+*/
 package cli
 
 import (
@@ -9,6 +15,9 @@ import (
 	"github.com/jeffwelling/giticket/pkg/common"
 )
 
+// Exec is the main entry point for giticket CLI. It parses the subcommand name,
+// validates the subcommand, parses the remaining arguments, and calls the
+// subcommand. Help information is printed if --help is passed in as argumnet.
 func Exec() {
 	// Sanity check, are we being called with no subcommands
 	if len(os.Args) <= 1 {
@@ -57,12 +66,16 @@ func Exec() {
 	subcommand.Execute()
 }
 
+// Print a banner, a series of "=" with fmt.Println
 func printBanner() {
 	fmt.Println("======================================")
 }
-func printActionMissing() {
+
+// Print a banner and a warning message that no subcommand was given, then
+// general usage info.
+func printSubcommandMissing() {
 	printBanner()
-	fmt.Println("Warning: No action given, and no parameters given. Nothing to do.")
+	fmt.Println("Warning: No subcommand given, and no parameters given. Nothing to do.")
 	printBanner()
 	common.PrintGeneralUsage()
 }
