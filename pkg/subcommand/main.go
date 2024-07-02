@@ -1,3 +1,4 @@
+// package subcommand implements the interface for subcommands in giticket
 package subcommand
 
 // SubcommandInterface defines methods all subcommands must implement

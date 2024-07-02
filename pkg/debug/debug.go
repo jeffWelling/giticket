@@ -1,3 +1,4 @@
+// Package debug implements debugging functions for giticket
 package debug
 
 import "fmt"

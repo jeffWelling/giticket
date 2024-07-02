@@ -1,4 +1,4 @@
-// Ticket implemtns routines for working with Giticket Tickets
+// Ticket implements routines for working with Giticket Tickets
 //
 // The ticket package uses the git2go library to work with git repositories.
 package ticket
