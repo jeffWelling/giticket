@@ -297,7 +297,7 @@ func CommentExists(
 		return false, err
 	}
 	debug.DebugMessage(debugFlag, "Walking giticket tickets tree")
-	giticketTicketsSubTree.Walk(func(name string, entry *git.TreeEntry) error {
+	err = giticketTicketsSubTree.Walk(func(name string, entry *git.TreeEntry) error {
 		ticketFile, err := thisRepo.LookupBlob(entry.Id)
 		if err != nil {
 			return fmt.Errorf("Error walking the tickets tree and looking up the entry ID: %s", err)
@@ -318,6 +318,9 @@ func CommentExists(
 
 		return nil
 	})
+	if err != nil {
+		return false, err
+	}
 	debug.DebugMessage(debugFlag, "Finished walking giticket tickets tree")
 
 	// Check if the comment exists
@@ -339,13 +342,16 @@ func TicketExists(
 
 	// Print every entry name in giticketTicketsSubTree
 	gotcha := false
-	giticketTicketsSubTree.Walk(func(name string, entry *git.TreeEntry) error {
+	err = giticketTicketsSubTree.Walk(func(name string, entry *git.TreeEntry) error {
 		debug.DebugMessage(true, "Found entry: "+entry.Name)
 		if entry.Name == ticketFilename {
 			gotcha = true
 		}
 		return nil
 	})
+	if err != nil {
+		return false, err
+	}
 
 	if gotcha {
 		return true, nil
@@ -363,10 +369,13 @@ func TicketExists(
 	}
 
 	// Print every entry name in giticketTicketsSubTree
-	giticketTicketsSubTree.Walk(func(name string, entry *git.TreeEntry) error {
+	err = giticketTicketsSubTree.Walk(func(name string, entry *git.TreeEntry) error {
 		debug.DebugMessage(true, "Found entry: "+entry.Id.String())
 		return nil
 	})
+	if err != nil {
+		return false, err
+	}
 
 	return true, nil
 }
@@ -386,23 +395,9 @@ func openGitAndReturnGiticketThings(branchName string, debugFlag bool) (*git.Rep
 		return nil, nil, nil, nil, err
 	}
 
-	// Lookup the branch
-	debug.DebugMessage(debugFlag, "Looking up branch: "+branchName)
-	branch, err := thisRepo.LookupBranch(branchName, git.BranchLocal)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-
-	// Lookup the commit the branch references
-	debug.DebugMessage(debugFlag, "Looking up commit: "+branch.Target().String())
-	parentCommit, err := thisRepo.LookupCommit(branch.Target())
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-
 	// Get the parent commit of the branch
 	debug.DebugMessage(debugFlag, "Getting parent commit from branch '"+branchName+"'")
-	parentCommit, err = GetParentCommit(thisRepo, branchName, debugFlag)
+	parentCommit, err := GetParentCommit(thisRepo, branchName, debugFlag)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}

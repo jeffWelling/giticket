@@ -30,7 +30,10 @@ func HandleSeverity(ticketID int, severity int, debugFlag bool) error {
 	t := FilterTicketsByID(tickets, ticketID)
 	t.Severity = severity
 
-	repo.Commit(&t, thisRepo, common.BranchName, author, "Setting severity of ticket "+strconv.Itoa(t.ID)+" to "+strconv.Itoa(severity), debugFlag)
+	err = repo.Commit(&t, thisRepo, common.BranchName, author, "Setting severity of ticket "+strconv.Itoa(t.ID)+" to "+strconv.Itoa(severity), debugFlag)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -74,6 +74,9 @@ func deleteTicket(ticketID int, branchName string, debugFlag bool) (bool, error)
 
 	// Get ticket filename
 	ticketsList, err := GetListOfTickets(thisRepo, branchName, debugFlag)
+	if err != nil {
+		return false, err
+	}
 	// Filter for ticketID
 	theTicket := FilterTicketsByID(ticketsList, ticketID)
 
@@ -104,6 +107,9 @@ func deleteTicket(ticketID int, branchName string, debugFlag bool) (bool, error)
 
 	debug.DebugMessage(debugFlag, "Adding .giticket to root tree builder")
 	err = rootTreeBuilder.Insert(".giticket", newGiticketTreeID, git.FilemodeTree)
+	if err != nil {
+		return false, err
+	}
 
 	debug.DebugMessage(debugFlag, "Writing root tree")
 	newRootTreeID, err := rootTreeBuilder.Write()

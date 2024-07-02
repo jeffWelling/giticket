@@ -44,7 +44,9 @@ func (subcommand *SubcommandSeverity) InitFlags(args []string) error {
 	subcommand.flagset.IntVar(&subcommand.severity, "s", 1, "Severity of the ticket")
 	subcommand.flagset.IntVar(&subcommand.ticketID, "ticketid", 0, "Ticket ID")
 	subcommand.flagset.IntVar(&subcommand.ticketID, "id", 0, "Ticket ID")
-	subcommand.flagset.Parse(args)
+	if err := subcommand.flagset.Parse(args); err != nil {
+		return err
+	}
 
 	subcommand.parameters["debugFlag"] = debugFlag
 	subcommand.parameters["helpFlag"] = helpFlag
@@ -69,7 +71,11 @@ func (subcommand *SubcommandSeverity) InitFlags(args []string) error {
 
 // Execute sets the severity for the ticket when the severity subcommand is used from the CLI
 func (subcommand *SubcommandSeverity) Execute() {
-	ticket.HandleSeverity(subcommand.ticketID, subcommand.severity, subcommand.debugFlag)
+	err := ticket.HandleSeverity(subcommand.ticketID, subcommand.severity, subcommand.debugFlag)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }
 
 // Help prints help information for the severity subcommand

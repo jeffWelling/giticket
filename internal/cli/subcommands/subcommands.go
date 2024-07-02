@@ -25,13 +25,6 @@ func registerSubcommand(subcommand_name string, action_plugin subcommand.Subcomm
 	registrySubcommands[subcommand_name] = action_plugin
 }
 
-// isAction() takes an subcommand_name and checks that it matches an action
-// that's in the registry
-func isAction(subcommand_name string) bool {
-	_, ok := registrySubcommands[subcommand_name]
-	return ok
-}
-
 // Use the action with the given name by returning it
 func Use(subcommand_name string) subcommand.SubcommandInterface {
 	return registrySubcommands[subcommand_name]

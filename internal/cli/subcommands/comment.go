@@ -52,7 +52,9 @@ func (subcommand *SubcommandComment) InitFlags(args []string) error {
 	subcommand.flagset.BoolVar(&delete, "delete", false, "Delete comment")
 	subcommand.flagset.BoolVar(&debugFlag, "debug", false, "Print debug info")
 	subcommand.flagset.BoolVar(&helpFlag, "help", false, "Print help for the comment subcommand")
-	subcommand.flagset.Parse(args)
+	if err := subcommand.flagset.Parse(args); err != nil {
+		return err
+	}
 
 	subcommand.params["helpFlag"] = helpFlag
 	subcommand.params["ticketID"] = ticketID
@@ -80,7 +82,7 @@ func (subcommand *SubcommandComment) InitFlags(args []string) error {
 // Execute is used to add a comment when the comment subcommand is used from the
 // CLI
 func (subcommand *SubcommandComment) Execute() {
-	ticket.HandleComment(
+	_, err := ticket.HandleComment(
 		common.BranchName,
 		subcommand.comment,
 		subcommand.commentID,
@@ -88,6 +90,11 @@ func (subcommand *SubcommandComment) Execute() {
 		subcommand.delete,
 		subcommand.debug,
 	)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }
 
 // Help prints information for the comment subcommand, it is called from CLI

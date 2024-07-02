@@ -38,6 +38,9 @@ func HandleStatus(
 	t := FilterTicketsByID(tickets, ticketID)
 
 	t.Status = status
-	repo.Commit(&t, thisRepo, common.BranchName, author, "Setting status of ticket "+strconv.Itoa(t.ID)+" to "+status, debugFlag)
+	err = repo.Commit(&t, thisRepo, common.BranchName, author, "Setting status of ticket "+strconv.Itoa(t.ID)+" to "+status, debugFlag)
+	if err != nil {
+		return err
+	}
 	return nil
 }

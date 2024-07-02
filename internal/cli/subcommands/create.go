@@ -28,7 +28,6 @@ type SubcommandCreate struct {
 	priority        int
 	severity        int
 	status          string
-	id              int
 	comments        []ticket.Comment
 	debugFlag       bool
 	flagset         *flag.FlagSet
@@ -112,7 +111,9 @@ func (subcommand *SubcommandCreate) InitFlags(args []string) error {
 	subcommand.flagset.BoolVar(&subcommand.helpFlag, "help", false, "Print help for the create subcommand")
 	commentsFlag := subcommand.flagset.String("comments", "", "Comma separated list of comments to add to the ticket")
 
-	subcommand.flagset.Parse(args)
+	if err := subcommand.flagset.Parse(args); err != nil {
+		return err
+	}
 
 	subcommand.params = make(map[string]interface{})
 	subcommand.params["helpFlag"] = helpFlag
@@ -179,14 +180,6 @@ func (subcommand *SubcommandCreate) InitFlags(args []string) error {
 		return fmt.Errorf("Cannot create a ticket without a title")
 	}
 	return nil
-}
-
-// ticketFilename() returns the ticket title encoded as a filename prefixed with
-// the ticket ID
-func (subcommand *SubcommandCreate) ticketFilename() string {
-	// turn spaces into underscores
-	title := strings.ReplaceAll(subcommand.title, " ", "_")
-	return fmt.Sprintf("%d_%s", subcommand.id, title)
 }
 
 func (subcommand *SubcommandCreate) DebugFlag() bool {

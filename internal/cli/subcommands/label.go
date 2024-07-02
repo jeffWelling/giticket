@@ -50,7 +50,9 @@ func (subcommand *SubcommandLabel) InitFlags(args []string) error {
 	subcommand.flagset.BoolVar(&subcommand.deleteFlag, "d", false, "Delete label")
 	subcommand.flagset.IntVar(&subcommand.ticketID, "ticketid", 0, "Ticket ID")
 	subcommand.flagset.IntVar(&subcommand.ticketID, "id", 0, "Ticket ID")
-	subcommand.flagset.Parse(args)
+	if err := subcommand.flagset.Parse(args); err != nil {
+		return err
+	}
 
 	subcommand.parameters["debugFlag"] = debugFlag
 	subcommand.parameters["helpFlag"] = helpFlag
@@ -91,13 +93,17 @@ func (subcommand *SubcommandLabel) InitFlags(args []string) error {
 // Execute is used to add a label when the label subcommand is used from the
 // CLI
 func (subcommand *SubcommandLabel) Execute() {
-	ticket.HandleLabel(
+	err := ticket.HandleLabel(
 		common.BranchName,
 		subcommand.label,
 		subcommand.deleteFlag,
 		subcommand.ticketID,
 		subcommand.debugFlag,
 	)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }
 
 // Help prints help information for the label subcommand

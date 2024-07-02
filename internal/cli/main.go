@@ -47,7 +47,7 @@ func Exec() {
 			return
 		}
 
-		printActionMissing()
+		printSubcommandMissing()
 		return
 	}
 

@@ -38,7 +38,9 @@ func (subcommand *SubcommandDelete) InitFlags(args []string) error {
 	subcommand.flagset.BoolVar(&helpFlag, "help", false, "Print help for the delete subcommand")
 	subcommand.flagset.IntVar(&ticketID, "ticketid", 0, "Ticket ID")
 	subcommand.flagset.IntVar(&ticketID, "id", 0, "Ticket ID")
-	subcommand.flagset.Parse(args)
+	if err := subcommand.flagset.Parse(args); err != nil {
+		return err
+	}
 
 	subcommand.ticketID = ticketID
 	subcommand.debugFlag = debugFlag
@@ -65,7 +67,11 @@ func (subcommand *SubcommandDelete) InitFlags(args []string) error {
 // Execute is used to delete a ticket when the user uses the delete subcommand
 // from the CLI
 func (subcommand *SubcommandDelete) Execute() {
-	ticket.HandleDelete(subcommand.ticketID, common.BranchName, subcommand.debugFlag)
+	_, err := ticket.HandleDelete(subcommand.ticketID, common.BranchName, subcommand.debugFlag)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }
 
 // Help prints help information for the delete subcommand

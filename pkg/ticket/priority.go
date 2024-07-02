@@ -29,7 +29,10 @@ func HandlePriority(ticketID int, priority int, debugFlag bool) error {
 	}
 	t := FilterTicketsByID(tickets, ticketID)
 	t.Priority = priority
-	repo.Commit(&t, thisRepo, common.BranchName, author, "Setting priority of ticket "+strconv.Itoa(t.ID)+" to "+strconv.Itoa(priority)+"", debugFlag)
+	err = repo.Commit(&t, thisRepo, common.BranchName, author, "Setting priority of ticket "+strconv.Itoa(t.ID)+" to "+strconv.Itoa(priority)+"", debugFlag)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

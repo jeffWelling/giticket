@@ -39,7 +39,9 @@ func (subcommand *SubcommandList) InitFlags(args []string) error {
 	subcommand.flagset.BoolVar(&subcommand.helpFlag, "help", false, "Print help")
 	subcommand.flagset.IntVar(&subcommand.windowWidth, "window", 0, "Window width")
 	subcommand.flagset.IntVar(&subcommand.windowWidth, "w", 0, "Window width")
-	subcommand.flagset.Parse(args)
+	if err := subcommand.flagset.Parse(args); err != nil {
+		return err
+	}
 
 	subcommand.parameters["debugFlag"] = debugFlag
 	subcommand.parameters["helpFlag"] = helpFlag
@@ -49,18 +51,17 @@ func (subcommand *SubcommandList) InitFlags(args []string) error {
 
 // Execute is used to list tickets when the user uses the list subcommand from the CLI
 func (subcommand *SubcommandList) Execute() {
-	ticket.HandleList(subcommand.debugFlag, common.BranchName, subcommand.windowWidth, os.Stdout)
+	err := ticket.HandleList(subcommand.debugFlag, common.BranchName, subcommand.windowWidth, os.Stdout)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }
 
 // Help prints help information for the list subcommand
 func (subcommand *SubcommandList) Help() {
 	fmt.Println("  list - List tickets")
 	fmt.Println("    eg: giticket list [params]")
-}
-
-type listParams struct {
-	windowLength int
-	debugFlag    bool
 }
 
 // Parameters

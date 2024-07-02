@@ -49,7 +49,9 @@ func (subcommand *SubcommandInit) InitFlags(args []string) error {
 	subcommand.flagset = flag.NewFlagSet("init", flag.ExitOnError)
 	subcommand.flagset.BoolVar(&subcommand.debugFlag, "debug", false, "Print debug info")
 	subcommand.flagset.BoolVar(&subcommand.helpFlag, "help", false, "Print help")
-	subcommand.flagset.Parse(args)
+	if err := subcommand.flagset.Parse(args); err != nil {
+		return err
+	}
 
 	subcommand.parameters = make(map[string]interface{})
 	subcommand.parameters["debugFlag"] = debugFlag

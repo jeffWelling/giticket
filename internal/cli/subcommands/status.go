@@ -43,7 +43,9 @@ func (subcommand *SubcommandStatus) InitFlags(args []string) error {
 	subcommand.flagset.StringVar(&subcommand.status, "s", "", "Status to set the ticket to")
 	subcommand.flagset.IntVar(&subcommand.ticketID, "ticketid", 0, "Ticket ID")
 	subcommand.flagset.IntVar(&subcommand.ticketID, "id", 0, "Ticket ID")
-	subcommand.flagset.Parse(args)
+	if err := subcommand.flagset.Parse(args); err != nil {
+		return err
+	}
 
 	subcommand.parameters["debugFlag"] = debugFlag
 	subcommand.parameters["helpFlag"] = helpFlag
@@ -73,7 +75,11 @@ func (subcommand *SubcommandStatus) InitFlags(args []string) error {
 
 // Execute is used to set the status of a ticket when the status subcommand is used from the CLI
 func (subcommand *SubcommandStatus) Execute() {
-	ticket.HandleStatus(subcommand.status, subcommand.ticketID, subcommand.helpFlag, subcommand.debugFlag)
+	err := ticket.HandleStatus(subcommand.status, subcommand.ticketID, subcommand.helpFlag, subcommand.debugFlag)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }
 
 // Help prints help information for the status subcommand

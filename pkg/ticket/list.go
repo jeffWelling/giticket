@@ -169,7 +169,7 @@ func GetListOfTickets(thisRepo *git.Repository, branchName string, debugFlag boo
 
 	var ticketList []Ticket
 	var t Ticket
-	giticketTicketsTree.Walk(func(name string, entry *git.TreeEntry) error {
+	err = giticketTicketsTree.Walk(func(name string, entry *git.TreeEntry) error {
 		ticketFile, err := thisRepo.LookupBlob(entry.Id)
 		if err != nil {
 			return fmt.Errorf("Error walking the tickets tree and looking up the entry ID: %s", err)
@@ -186,6 +186,9 @@ func GetListOfTickets(thisRepo *git.Repository, branchName string, debugFlag boo
 		ticketList = append(ticketList, t)
 		return nil
 	})
+	if err != nil {
+		return nil, fmt.Errorf("Error walking the tickets tree: %s", err)
+	}
 
 	debug.DebugMessage(debugFlag, "Number of tickets: "+fmt.Sprint(len(ticketList)))
 	return ticketList, nil

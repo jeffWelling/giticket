@@ -45,6 +45,9 @@ func HandleCreate(
 	i := ticketID + 1
 	debug.DebugMessage(debugFlag, "incrementing next ticket ID in .giticket/next_ticket_id, is now: "+strconv.Itoa(i))
 	NTIDBlobOID, err := thisRepo.CreateBlobFromBuffer([]byte(strconv.Itoa(i)))
+	if err != nil {
+		return 0, "", err
+	}
 	debug.DebugMessage(debugFlag, "NTIDBlobOID: "+NTIDBlobOID.String())
 
 	rootTreeBuilder, previousCommitTree, err := repo.TreeBuilderFromCommit(parentCommit, thisRepo, debugFlag)
@@ -54,6 +57,9 @@ func HandleCreate(
 	defer rootTreeBuilder.Free()
 
 	giticketTree, err := repo.GetSubTreeByName(previousCommitTree, thisRepo, ".giticket", debugFlag)
+	if err != nil {
+		return 0, "", err
+	}
 	defer giticketTree.Free()
 
 	// Create a TreeBuilder from the previous tree for giticket so we can add a

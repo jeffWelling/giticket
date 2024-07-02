@@ -42,7 +42,9 @@ func (subcommand *SubcommandPriority) InitFlags(args []string) error {
 	subcommand.flagset.IntVar(&subcommand.priority, "p", 1, "Priority of the ticket")
 	subcommand.flagset.IntVar(&subcommand.ticketID, "ticketid", 0, "Ticket ID")
 	subcommand.flagset.IntVar(&subcommand.ticketID, "id", 0, "Ticket ID")
-	subcommand.flagset.Parse(args)
+	if err := subcommand.flagset.Parse(args); err != nil {
+		return err
+	}
 
 	subcommand.parameters["debugFlag"] = debugFlag
 	subcommand.parameters["helpFlag"] = helpFlag
@@ -67,7 +69,11 @@ func (subcommand *SubcommandPriority) InitFlags(args []string) error {
 // Execute executes the priority subcommand when the priority subcommand is used
 // from the CLI
 func (subcommand *SubcommandPriority) Execute() {
-	ticket.HandlePriority(subcommand.ticketID, subcommand.priority, subcommand.debugFlag)
+	err := ticket.HandlePriority(subcommand.ticketID, subcommand.priority, subcommand.debugFlag)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }
 
 // Help prints help information for the priority subcommand

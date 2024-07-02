@@ -27,7 +27,11 @@ type SubcommandShow struct {
 
 // Execute is used to show a ticket when the user uses the show subcommand from the CLI
 func (subcommand *SubcommandShow) Execute() {
-	ticket.HandleShow(subcommand.ticket_id, subcommand.output, subcommand.debugFlag, subcommand.helpFlag)
+	err := ticket.HandleShow(subcommand.ticket_id, subcommand.output, subcommand.debugFlag, subcommand.helpFlag)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }
 
 // Help prints help information for the show subcommand
@@ -63,7 +67,9 @@ func (subcommand *SubcommandShow) InitFlags(args []string) error {
 	subcommand.flagset.StringVar(&subcommand.output, "o", "text", "Output format")
 	subcommand.flagset.IntVar(&subcommand.ticket_id, "ticketid", 0, "Ticket ID")
 	subcommand.flagset.IntVar(&subcommand.ticket_id, "id", 0, "Ticket ID")
-	subcommand.flagset.Parse(args)
+	if err := subcommand.flagset.Parse(args); err != nil {
+		return err
+	}
 
 	subcommand.parameters["debugFlag"] = debugFlag
 	subcommand.parameters["helpFlag"] = helpFlag
