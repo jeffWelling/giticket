@@ -12,7 +12,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func HandleList(debugFlag bool, branchName string, windowWidth int, w io.Writer) error {
+func HandleList(w io.Writer, windowWidth int, branchName string, filterName string, filterSet bool, debugFlag bool) error {
 	debug.DebugMessage(debugFlag, "Opening git repository")
 	thisRepo, err := git.OpenRepository(".")
 	if err != nil {
@@ -20,7 +20,7 @@ func HandleList(debugFlag bool, branchName string, windowWidth int, w io.Writer)
 	}
 
 	output, err := ListTickets(
-		thisRepo, branchName, windowWidth, debugFlag)
+		thisRepo, branchName, windowWidth, filterName, filterSet, debugFlag)
 	if err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func GetTicketsList() ([]Ticket, error) {
 	return GetListOfTickets(thisRepo, common.BranchName, false)
 }
 
-func ListTickets(thisRepo *git.Repository, branchName string, windowWidth int, debugFlag bool) (string, error) {
+func ListTickets(thisRepo *git.Repository, branchName string, windowWidth int, filterName string, filterSet bool, debugFlag bool) (string, error) {
 	output := ""
 
 	// Get a list of tickets from the repo
@@ -47,6 +47,32 @@ func ListTickets(thisRepo *git.Repository, branchName string, windowWidth int, d
 	ticketsList, err := GetListOfTickets(thisRepo, branchName, debugFlag)
 	if err != nil {
 		return "", fmt.Errorf("Unable to list tickets: %s", err) // TODO: err
+	}
+
+	// Sanity check that a filter has been set before attempting to set
+	// preferred filter
+	currentFilter, err := GetCurrentFilter(debugFlag)
+	if err != nil {
+		return "", err
+	}
+	if filterName == "" && filterSet {
+		return "", fmt.Errorf("Cannot set preferred filter when no filter has been configured yet, create one with the filter subcommand.")
+	}
+
+	// Filter tickets
+	filteredTicketsList := new([]Ticket)
+	if filterName != "" {
+		filteredTicketsList, err = FilterTickets(ticketsList, filterName, debugFlag)
+		if err != nil {
+			return "", err
+		}
+	} else if currentFilter != "" {
+		filteredTicketsList, err = FilterTickets(ticketsList, currentFilter, debugFlag)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		filteredTicketsList = &ticketsList
 	}
 
 	widthOfID := widest(ticketsList, "ID")
@@ -71,7 +97,7 @@ func ListTickets(thisRepo *git.Repository, branchName string, windowWidth int, d
 	output += strings.Repeat("-", widthOfID+widthOfTitle+widthOfSeverity+widthOfStatus+4) + "\n"
 
 	// Print the tickets
-	for _, t := range ticketsList {
+	for _, t := range *filteredTicketsList {
 		IDAsString := fmt.Sprintf("%d", t.ID)
 		SeverityAsString := fmt.Sprintf("%d", t.Severity)
 		output += fmt.Sprintf("%s | %s | %s | %s\n", padRight(IDAsString, widthOfID), padRight(t.Title, widthOfTitle), padRight(SeverityAsString, widthOfSeverity), padRight(t.Status, widthOfStatus))
@@ -120,6 +146,8 @@ func widest(tickets []Ticket, attr string) int {
 }
 
 func GetListOfTickets(thisRepo *git.Repository, branchName string, debugFlag bool) ([]Ticket, error) {
+	debug.DebugMessage(debugFlag, "GetListOfTickets() start")
+
 	// Find the branch and its target commit
 	debug.DebugMessage(debugFlag, "Looking up branch: "+branchName)
 	branch, err := thisRepo.LookupBranch(branchName, git.BranchLocal)

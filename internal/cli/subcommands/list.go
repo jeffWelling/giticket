@@ -18,11 +18,13 @@ func init() {
 // SubcommandList implements SubcommandInterface and extends it with
 // attributes common to the list subcommand
 type SubcommandList struct {
-	flagset     *flag.FlagSet
 	debugFlag   bool
+	flagset     *flag.FlagSet
+	filter      string
+	filterSet   bool
 	helpFlag    bool
-	windowWidth int
 	parameters  map[string]interface{}
+	windowWidth int
 }
 
 // InitFlags sets up the flags for the list subcommand, parses flags, and returns any errors
@@ -39,8 +41,16 @@ func (subcommand *SubcommandList) InitFlags(args []string) error {
 	subcommand.flagset.BoolVar(&subcommand.helpFlag, "help", false, "Print help")
 	subcommand.flagset.IntVar(&subcommand.windowWidth, "window", 0, "Window width")
 	subcommand.flagset.IntVar(&subcommand.windowWidth, "w", 0, "Window width")
+	subcommand.flagset.StringVar(&subcommand.filter, "filter", "", "The filter name to use for listing tickets with")
+	subcommand.flagset.StringVar(&subcommand.filter, "f", "", "The filter name to use for listing tickets with")
+	subcommand.flagset.BoolVar(&subcommand.filterSet, "set-filter", false, "Requires the filter name parameter. If true, save the name of the filter as the default filter to use for future list operations.")
 	if err := subcommand.flagset.Parse(args); err != nil {
 		return err
+	}
+
+	// If filterSet is true, then filter is required
+	if subcommand.filterSet && subcommand.filter == "" {
+		return fmt.Errorf("Filter name is required when using the --set-filter flag")
 	}
 
 	subcommand.parameters["debugFlag"] = debugFlag
@@ -51,7 +61,7 @@ func (subcommand *SubcommandList) InitFlags(args []string) error {
 
 // Execute is used to list tickets when the user uses the list subcommand from the CLI
 func (subcommand *SubcommandList) Execute() {
-	err := ticket.HandleList(subcommand.debugFlag, common.BranchName, subcommand.windowWidth, os.Stdout)
+	err := ticket.HandleList(os.Stdout, subcommand.windowWidth, common.BranchName, subcommand.filter, subcommand.filterSet, subcommand.debugFlag)
 	if err != nil {
 		fmt.Println(err)
 		return

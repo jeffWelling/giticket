@@ -17,13 +17,13 @@ func init() {
 // SubcommandLabel implements SubcommandInterface and extends it with attributes
 // specific to the label subcommand
 type SubcommandLabel struct {
-	flagset    *flag.FlagSet
 	debugFlag  bool
+	deleteFlag bool
+	flagset    *flag.FlagSet
 	helpFlag   bool
 	label      string
-	deleteFlag bool
-	ticketID   int
 	parameters map[string]interface{}
+	ticketID   int
 }
 
 // InitFlags sets up the flags specific to the label subcommand, parses the
@@ -55,9 +55,9 @@ func (subcommand *SubcommandLabel) InitFlags(args []string) error {
 	}
 
 	subcommand.parameters["debugFlag"] = debugFlag
+	subcommand.parameters["deleteFlag"] = delete
 	subcommand.parameters["helpFlag"] = helpFlag
 	subcommand.parameters["label"] = label
-	subcommand.parameters["deleteFlag"] = delete
 	subcommand.parameters["ticketID"] = ticketID
 
 	if subcommand.helpFlag {
