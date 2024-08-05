@@ -12,7 +12,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func HandleList(w io.Writer, windowWidth int, branchName string, filterName string, filterSet bool, debugFlag bool) error {
+func HandleList(w io.Writer, windowWidth int, branchName string, filterName string, debugFlag bool) error {
 	debug.DebugMessage(debugFlag, "Opening git repository")
 	thisRepo, err := git.OpenRepository(".")
 	if err != nil {
@@ -20,7 +20,7 @@ func HandleList(w io.Writer, windowWidth int, branchName string, filterName stri
 	}
 
 	output, err := ListTickets(
-		thisRepo, branchName, windowWidth, filterName, filterSet, debugFlag)
+		thisRepo, branchName, windowWidth, filterName, debugFlag)
 	if err != nil {
 		return err
 	}
@@ -39,24 +39,15 @@ func GetTicketsList() ([]Ticket, error) {
 	return GetListOfTickets(thisRepo, common.BranchName, false)
 }
 
-func ListTickets(thisRepo *git.Repository, branchName string, windowWidth int, filterName string, filterSet bool, debugFlag bool) (string, error) {
+func ListTickets(thisRepo *git.Repository, branchName string, windowWidth int, filterName string, debugFlag bool) (string, error) {
 	output := ""
 
 	// Get a list of tickets from the repo
 	var ticketsList []Ticket
 	ticketsList, err := GetListOfTickets(thisRepo, branchName, debugFlag)
 	if err != nil {
+		debug.DebugMessage(debugFlag, "Unable to list tickets: "+err.Error())
 		return "", fmt.Errorf("Unable to list tickets: %s", err) // TODO: err
-	}
-
-	// Sanity check that a filter has been set before attempting to set
-	// preferred filter
-	currentFilter, err := GetCurrentFilter(debugFlag)
-	if err != nil {
-		return "", err
-	}
-	if filterName == "" && filterSet {
-		return "", fmt.Errorf("Cannot set preferred filter when no filter has been configured yet, create one with the filter subcommand.")
 	}
 
 	// Filter tickets
@@ -64,11 +55,7 @@ func ListTickets(thisRepo *git.Repository, branchName string, windowWidth int, f
 	if filterName != "" {
 		filteredTicketsList, err = FilterTickets(ticketsList, filterName, debugFlag)
 		if err != nil {
-			return "", err
-		}
-	} else if currentFilter != "" {
-		filteredTicketsList, err = FilterTickets(ticketsList, currentFilter, debugFlag)
-		if err != nil {
+			debug.DebugMessage(debugFlag, "Unable to filter tickets with filterName: "+err.Error())
 			return "", err
 		}
 	} else {

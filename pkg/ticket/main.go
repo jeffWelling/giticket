@@ -96,3 +96,36 @@ func (t *Ticket) TicketToYaml() []byte {
 func PrintParameterMissing(param string) {
 	fmt.Printf("A required parameter was not provided, check the '--help' output for the action for more details. Missing parameter: %s\n", param)
 }
+
+// ToAny() Converts the ticket into a series of map[string]any and []any for the
+// purpose of filtering by gojq.
+func (t *Ticket) ToAny() (map[string]any, error) {
+	ticketAsAny := map[string]any{
+		"title":           t.Title,
+		"description":     t.Description,
+		"priority":        t.Priority,
+		"severity":        t.Severity,
+		"status":          t.Status,
+		"next_comment_id": t.NextCommentID,
+		"id":              t.ID,
+		"created":         t.Created,
+	}
+	var commentMaps []map[string]interface{}
+	for _, comment := range t.Comments {
+		commentMap := make(map[string]interface{})
+		commentMap["ID"] = comment.ID
+		commentMap["Created"] = comment.Created
+		commentMap["Body"] = comment.Body
+		commentMap["Author"] = comment.Author
+		commentMaps = append(commentMaps, commentMap)
+	}
+
+	ticketAsAny["comments"] = commentMaps
+
+	var labelsAny []any
+	for _, label := range t.Labels {
+		labelsAny = append(labelsAny, label)
+	}
+	ticketAsAny["labels"] = labelsAny
+	return ticketAsAny, nil
+}
