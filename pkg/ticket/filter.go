@@ -19,17 +19,15 @@ import (
 
 // Filter is used in ticket list operations to return a subset of tickets
 type Filter struct {
-	Name   string
-	Filter string
-
+	Name      string
+	Filter    string
 	CreatedAt string
 }
 
 // FilterList is a list of Filters and a value that represents the 'current'
 // filter to use
 type FilterList struct {
-	CurrentFilter string
-	Filters       map[string]Filter
+	Filters map[string]Filter
 }
 
 // FilterTicketsByID takes a list of tickets and an integer representing the
@@ -306,47 +304,66 @@ func WriteFilters(filters *FilterList, commitMessage string, branchName string, 
 func checkFilterIsValid(filter string, name string, debugFlag bool) error {
 	debug.DebugMessage(debugFlag, "Checking filter validity for filter: "+name)
 	if filter == "" {
+		debug.DebugMessage(debugFlag, "Filter cannot be blank")
 		return errors.New("Error validating filter: Filter cannot be empty")
 	}
 
-	// Create a set of test tickets to work with and turn them into JSON
-	jsonListOfTickets, err := json.Marshal([]Ticket{
+	// Create test tickets
+	debug.DebugMessage(debugFlag, "Creating test tickets")
+	tickets := []Ticket{
 		{
-			ID: 1,
+			ID:     1,
+			Status: "new",
 		},
 		{
-			ID: 2,
+			ID:     2,
+			Status: "in progress",
 		},
 		{
-			ID: 3,
+			ID:     3,
+			Status: "closed",
 		},
-	})
-	if err != nil {
-		return err
 	}
 
-	// Turn jsonListOfTickets into a map[string]interface{}
-	var listOfTickets []Ticket
-	err = json.Unmarshal(jsonListOfTickets, &listOfTickets)
-	if err != nil {
-		return fmt.Errorf("Error unmarshalling jsonListOfTickets to validate filter: " + err.Error())
+	var listOfTickets []any
+	debug.DebugMessage(debugFlag, "Looping through tickets")
+	for _, ticket := range tickets {
+		debug.DebugMessage(debugFlag, "Adding iterTicket to listOfTickets")
+		ticketAsAny, err := ticket.ToAny()
+		if err != nil {
+			return err
+		}
+		listOfTickets = append(listOfTickets, ticketAsAny)
 	}
 
+	debug.DebugMessage(debugFlag, "Parsing jq query")
 	queryObj, err := gojq.Parse(filter)
 	if err != nil {
+		debug.DebugMessage(debugFlag, "Error in checkFilterIsValid while parsing filter: "+err.Error())
 		return fmt.Errorf("Filter validation error, unable to parse: " + err.Error())
 	}
 
 	// Just check that the filter can be used, we don't care about the result of
 	// the filter operation
-	iter := queryObj.Run(listOfTickets)
+	mapOfTickets := make(map[string]any)
+	mapOfTickets["tickets"] = listOfTickets
+	debug.DebugMessage(debugFlag, "Running jq query")
+	iter := queryObj.Run(mapOfTickets)
 	for {
+		debug.DebugMessage(debugFlag, "In checkFilterIsValid, queryObj.Run() loop")
 		result, ok := iter.Next()
 		if !ok {
+			debug.DebugMessage(debugFlag, "In checkFilterIsValid, queryObj.Run() nothig left")
 			break
 		}
+		debug.DebugMessage(debugFlag, "In checkFilterIsValid, passed iter.Next()")
 		if err, ok := result.(error); ok {
-			return fmt.Errorf("Filter validation error: " + err.Error())
+			debug.DebugMessage(debugFlag, "In checkFilterIsValid, iter.Next() returned error as result: "+err.Error())
+			if err, ok := err.(*gojq.HaltError); ok && err.Value() == nil {
+				debug.DebugMessage(debugFlag, "In checkFilterIsValid, queryObj.Run() returned nil")
+				break
+			}
+			return err
 		}
 	}
 
@@ -412,6 +429,10 @@ func GetFilter(filterName string, debugFlag bool) (Filter, error) {
 	if err != nil {
 		return Filter{}, err
 	}
+	// Does filters have key named filterName?
+	if _, ok := filters.Filters[filterName]; !ok {
+		return Filter{}, fmt.Errorf("Filter not found: " + filterName)
+	}
 	return filters.Filters[filterName], nil
 }
 
@@ -419,67 +440,89 @@ func GetFilter(filterName string, debugFlag bool) (Filter, error) {
 // returns a list of tickets that match the filter. Returns an error if there
 // is one.
 func FilterTickets(tickets []Ticket, filterName string, debugFlag bool) (*[]Ticket, error) {
+	debug.DebugMessage(debugFlag, "Filtering tickets with filter: "+filterName+" on "+strconv.Itoa(len(tickets))+" tickets")
+	var listOfTicketsAsAny []any
+
 	// Get the filter
 	filter, err := GetFilter(filterName, debugFlag)
 	if err != nil {
+		debug.DebugMessage(debugFlag, "Error in FilterTickets while getting filter: "+err.Error())
 		return nil, err
+	}
+
+	// If there are no tickets, return
+	if len(tickets) == 0 {
+		return &[]Ticket{}, nil
 	}
 
 	// Parse the filter
 	queryObj, err := gojq.Parse(filter.Filter)
 	if err != nil {
+		debug.DebugMessage(debugFlag, "Error in FilterTickets while parsing filter: "+err.Error())
 		return nil, fmt.Errorf("Error parsing filter: " + err.Error())
 	}
 
-	// Convert []Ticket into []map[string]interface{} for gojq
-	var listOfTickets []map[string]interface{}
+	// Convert []Ticket for gojq
 	ticketsJSON, err := json.Marshal(tickets)
 	if err != nil {
+		debug.DebugMessage(debugFlag, "Error in FilterTickets while marshalling tickets: "+err.Error())
 		return nil, err
 	}
-	fmt.Println("The list of tickets as JSON: " + string(ticketsJSON))
-	err = json.Unmarshal(ticketsJSON, &listOfTickets)
+	debug.DebugMessage(debugFlag, "ticketsJSON: "+string(ticketsJSON))
+	err = json.Unmarshal(ticketsJSON, &listOfTicketsAsAny)
 	if err != nil {
+		debug.DebugMessage(debugFlag, "Error in FilterTickets while unmarshalling tickets: "+err.Error())
 		return nil, err
 	}
-	fmt.Println("The length of listOfTickets is " + strconv.Itoa(len(listOfTickets)))
 
 	// Apply the filter
-	iter := queryObj.Run(listOfTickets)
-	var iterTicket Ticket
-	var filteredTickets []Ticket
+	mapOfTickets := map[string]any{"tickets": listOfTicketsAsAny}
+	iter := queryObj.Run(mapOfTickets)
+
+	// Print mapOfTickets
+	debug.DebugMessage(debugFlag, "mapOfTickets: "+fmt.Sprint(mapOfTickets))
+
+	// Convert back to []Ticket
+	debug.DebugMessage(debugFlag, "FilterTickets Starting filter loop")
+	var filteredTicketsAsAny []any
 	for {
+		debug.DebugMessage(debugFlag, "Starting filter loop iteration")
 		result, ok := iter.Next()
 		if !ok {
+			debug.DebugMessage(debugFlag, "Finished filter loop, nothing left.")
 			break
 		}
+		debug.DebugMessage(debugFlag, "FilterTickets Next returned: "+fmt.Sprint(result))
 		if err, ok := result.(error); ok {
-			return nil, fmt.Errorf("Error applying filter: " + err.Error())
-		}
-		// Turn result into JSON and then into Ticket
-		resultJSON, err := json.Marshal(result)
-		if err != nil {
+			debug.DebugMessage(debugFlag, "iter.Next() returned an error: "+err.Error())
+			if err, ok := err.(*gojq.HaltError); ok && err.Value() == nil {
+				debug.DebugMessage(debugFlag, "In checkFilterIsValid, queryObj.Run() returned nil")
+				break
+			}
 			return nil, err
 		}
-		fmt.Println("Trying to unmarshal: " + string(resultJSON))
-		err = json.Unmarshal(resultJSON, &iterTicket)
-		if err != nil {
-			return nil, err
-		}
-		filteredTickets = append(filteredTickets, iterTicket)
+		filteredTicketsAsAny = append(filteredTicketsAsAny, result)
+	}
+	debug.DebugMessage(debugFlag, "Finished filter loop")
+
+	var filteredTickets []Ticket
+	if len(filteredTicketsAsAny) == 0 {
+		return &[]Ticket{}, nil
 	}
 
-	return &filteredTickets, nil
-}
-
-// GetCurrentFilter takes a debug flag and returns the name of the current
-// filter. Returns an error if there is one. This function may return an empty
-// string if the current filter has not yet been set.
-func GetCurrentFilter(debugFlag bool) (string, error) {
-	debug.DebugMessage(debugFlag, "GetCurrentFilter() start")
-	filters, err := GetFilters(common.BranchName, debugFlag)
+	filteredTicketsAsJSON, err := json.Marshal(filteredTicketsAsAny)
 	if err != nil {
-		return "", err
+		debug.DebugMessage(debugFlag, "Error in FilterTickets while marshalling filteredTicketsAsInterfaces: "+err.Error())
+		return nil, err
 	}
-	return filters.CurrentFilter, nil
+
+	// filteredTicketsAsJSON is a [][]interface{} at this point, we only want
+	// the first element of the top level slice
+	debug.DebugMessage(debugFlag, "Unmarshalling filteredTicketsAsJSON "+string(filteredTicketsAsJSON))
+	err = json.Unmarshal(filteredTicketsAsJSON, &filteredTickets)
+	if err != nil {
+		debug.DebugMessage(debugFlag, "Error in FilterTickets while unmarshalling filteredTicketsAsInterfaces: "+err.Error())
+		return nil, err
+	}
+	return &filteredTickets, nil
 }

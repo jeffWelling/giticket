@@ -21,7 +21,6 @@ type SubcommandList struct {
 	debugFlag   bool
 	flagset     *flag.FlagSet
 	filter      string
-	filterSet   bool
 	helpFlag    bool
 	parameters  map[string]interface{}
 	windowWidth int
@@ -43,14 +42,8 @@ func (subcommand *SubcommandList) InitFlags(args []string) error {
 	subcommand.flagset.IntVar(&subcommand.windowWidth, "w", 0, "Window width")
 	subcommand.flagset.StringVar(&subcommand.filter, "filter", "", "The filter name to use for listing tickets with")
 	subcommand.flagset.StringVar(&subcommand.filter, "f", "", "The filter name to use for listing tickets with")
-	subcommand.flagset.BoolVar(&subcommand.filterSet, "set-filter", false, "Requires the filter name parameter. If true, save the name of the filter as the default filter to use for future list operations.")
 	if err := subcommand.flagset.Parse(args); err != nil {
 		return err
-	}
-
-	// If filterSet is true, then filter is required
-	if subcommand.filterSet && subcommand.filter == "" {
-		return fmt.Errorf("Filter name is required when using the --set-filter flag")
 	}
 
 	subcommand.parameters["debugFlag"] = debugFlag
@@ -61,7 +54,7 @@ func (subcommand *SubcommandList) InitFlags(args []string) error {
 
 // Execute is used to list tickets when the user uses the list subcommand from the CLI
 func (subcommand *SubcommandList) Execute() {
-	err := ticket.HandleList(os.Stdout, subcommand.windowWidth, common.BranchName, subcommand.filter, subcommand.filterSet, subcommand.debugFlag)
+	err := ticket.HandleList(os.Stdout, subcommand.windowWidth, common.BranchName, subcommand.filter, subcommand.debugFlag)
 	if err != nil {
 		fmt.Println(err)
 		return
