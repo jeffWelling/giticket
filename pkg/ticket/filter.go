@@ -441,11 +441,18 @@ func GetFilter(filterName string, debugFlag bool) (Filter, error) {
 // is one.
 func FilterTickets(tickets []Ticket, filterName string, debugFlag bool) (*[]Ticket, error) {
 	debug.DebugMessage(debugFlag, "Filtering tickets with filter: "+filterName+" on "+strconv.Itoa(len(tickets))+" tickets")
+	var listOfTicketsAsAny []any
+
 	// Get the filter
 	filter, err := GetFilter(filterName, debugFlag)
 	if err != nil {
 		debug.DebugMessage(debugFlag, "Error in FilterTickets while getting filter: "+err.Error())
 		return nil, err
+	}
+
+	// If there are no tickets, return
+	if len(tickets) == 0 {
+		return &[]Ticket{}, nil
 	}
 
 	// Parse the filter
@@ -455,32 +462,37 @@ func FilterTickets(tickets []Ticket, filterName string, debugFlag bool) (*[]Tick
 		return nil, fmt.Errorf("Error parsing filter: " + err.Error())
 	}
 
-	// Convert []Ticket into []map[string]interface{} for gojq
-	var listOfTickets []map[string]any
+	// Convert []Ticket for gojq
 	ticketsJSON, err := json.Marshal(tickets)
 	if err != nil {
 		debug.DebugMessage(debugFlag, "Error in FilterTickets while marshalling tickets: "+err.Error())
 		return nil, err
 	}
-	err = json.Unmarshal(ticketsJSON, &listOfTickets)
+	debug.DebugMessage(debugFlag, "ticketsJSON: "+string(ticketsJSON))
+	err = json.Unmarshal(ticketsJSON, &listOfTicketsAsAny)
 	if err != nil {
 		debug.DebugMessage(debugFlag, "Error in FilterTickets while unmarshalling tickets: "+err.Error())
 		return nil, err
 	}
 
 	// Apply the filter
-	mapOfTickets := map[string]any{"tickets": listOfTickets}
+	mapOfTickets := map[string]any{"tickets": listOfTicketsAsAny}
 	iter := queryObj.Run(mapOfTickets)
 
+	// Print mapOfTickets
+	debug.DebugMessage(debugFlag, "mapOfTickets: "+fmt.Sprint(mapOfTickets))
+
 	// Convert back to []Ticket
-	debug.DebugMessage(debugFlag, "Starting filter loop")
-	var filteredTicketsAsInterfaces []interface{}
+	debug.DebugMessage(debugFlag, "FilterTickets Starting filter loop")
+	var filteredTicketsAsAny []any
 	for {
+		debug.DebugMessage(debugFlag, "Starting filter loop iteration")
 		result, ok := iter.Next()
 		if !ok {
 			debug.DebugMessage(debugFlag, "Finished filter loop, nothing left.")
 			break
 		}
+		debug.DebugMessage(debugFlag, "FilterTickets Next returned: "+fmt.Sprint(result))
 		if err, ok := result.(error); ok {
 			debug.DebugMessage(debugFlag, "iter.Next() returned an error: "+err.Error())
 			if err, ok := err.(*gojq.HaltError); ok && err.Value() == nil {
@@ -489,16 +501,16 @@ func FilterTickets(tickets []Ticket, filterName string, debugFlag bool) (*[]Tick
 			}
 			return nil, err
 		}
-		filteredTicketsAsInterfaces = append(filteredTicketsAsInterfaces, result)
+		filteredTicketsAsAny = append(filteredTicketsAsAny, result)
 	}
 	debug.DebugMessage(debugFlag, "Finished filter loop")
 
-	var filteredTickets [][]Ticket
-	if len(filteredTicketsAsInterfaces) == 0 {
-		return &filteredTickets[0], nil
+	var filteredTickets []Ticket
+	if len(filteredTicketsAsAny) == 0 {
+		return &[]Ticket{}, nil
 	}
 
-	filteredTicketsAsJSON, err := json.Marshal(filteredTicketsAsInterfaces)
+	filteredTicketsAsJSON, err := json.Marshal(filteredTicketsAsAny)
 	if err != nil {
 		debug.DebugMessage(debugFlag, "Error in FilterTickets while marshalling filteredTicketsAsInterfaces: "+err.Error())
 		return nil, err
@@ -512,5 +524,5 @@ func FilterTickets(tickets []Ticket, filterName string, debugFlag bool) (*[]Tick
 		debug.DebugMessage(debugFlag, "Error in FilterTickets while unmarshalling filteredTicketsAsInterfaces: "+err.Error())
 		return nil, err
 	}
-	return &filteredTickets[0], nil
+	return &filteredTickets, nil
 }
