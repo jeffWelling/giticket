@@ -478,6 +478,9 @@ func FilterTickets(tickets []Ticket, filterName string, debugFlag bool) (*[]Tick
 func GetCurrentFilter(debugFlag bool) (string, error) {
 	debug.DebugMessage(debugFlag, "GetCurrentFilter() start")
 	filters, err := GetFilters(common.BranchName, debugFlag)
+	if err.Error() == "the path 'filters.json' does not exist in the given tree" {
+		return "", nil
+	}
 	if err != nil {
 		return "", err
 	}
