@@ -4,7 +4,11 @@ labels: []
 priority: 1
 severity: 1
 status: new
-comments: []
-next_comment_id: 0
+comments:
+- id: 0
+  created: 1729565229
+  body: my other comment
+  author: Jeff Welling <real.jeff.welling@gmail.com>
+next_comment_id: 1
 id: 1
 created: 1729564289
