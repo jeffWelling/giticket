@@ -33,7 +33,7 @@ func HandleComment(
 	deleteFlag bool,
 	debugFlag bool,
 ) (string, error) {
-	debug.DebugMessage(true, "Handling comment")
+	debug.DebugMessage(debugFlag, "Handling comment")
 	debug.DebugMessage(debugFlag, "Opening git repository")
 	thisRepo, err := git.OpenRepository(".")
 	if err != nil {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jeffwelling/giticket/pkg/common"
+	"github.com/jeffwelling/giticket/pkg/debug"
 	"github.com/jeffwelling/giticket/pkg/ticket"
 )
 
@@ -23,45 +24,40 @@ type SubcommandComment struct {
 	commentID int
 	comment   string
 	delete    bool
-	debug     bool
+	debugFlag bool
 	params    map[string]interface{}
 }
 
 // InitFlags sets up flags the command subcommand, parses flags, and returns any
 // errors.
 func (subcommand *SubcommandComment) InitFlags(args []string) error {
-	subcommand.params = make(map[string]interface{})
-	var (
-		helpFlag  bool
-		ticketID  int
-		commentID int
-		comment   string
-		delete    bool
-		debugFlag bool
-	)
 
 	subcommand.flagset = flag.NewFlagSet("comment", flag.ExitOnError)
 
-	subcommand.flagset.IntVar(&ticketID, "ticketid", 0, "Ticket ID")
-	subcommand.flagset.IntVar(&ticketID, "id", 0, "Ticket ID")
-	subcommand.flagset.IntVar(&commentID, "commentid", 0, "Comment ID")
-	subcommand.flagset.IntVar(&commentID, "cid", 0, "Comment ID")
-	subcommand.flagset.StringVar(&comment, "comment", "", "Comment")
-	subcommand.flagset.StringVar(&comment, "c", "", "Comment")
-	subcommand.flagset.BoolVar(&delete, "d", false, "Delete comment")
-	subcommand.flagset.BoolVar(&delete, "delete", false, "Delete comment")
-	subcommand.flagset.BoolVar(&debugFlag, "debug", false, "Print debug info")
-	subcommand.flagset.BoolVar(&helpFlag, "help", false, "Print help for the comment subcommand")
+	subcommand.flagset.BoolVar(&subcommand.debugFlag, "debug", false, "Print debug info")
+
+	subcommand.flagset.IntVar(&subcommand.ticketID, "ticketid", 0, "Ticket ID")
+	subcommand.flagset.IntVar(&subcommand.ticketID, "id", 0, "Ticket ID")
+	subcommand.flagset.IntVar(&subcommand.commentID, "commentid", 0, "Comment ID")
+	subcommand.flagset.IntVar(&subcommand.commentID, "cid", 0, "Comment ID")
+	subcommand.flagset.StringVar(&subcommand.comment, "comment", "", "Comment")
+	subcommand.flagset.StringVar(&subcommand.comment, "c", "", "Comment")
+	subcommand.flagset.BoolVar(&subcommand.delete, "d", false, "Delete comment")
+	subcommand.flagset.BoolVar(&subcommand.delete, "delete", false, "Delete comment")
+	subcommand.flagset.BoolVar(&subcommand.helpFlag, "help", false, "Print help for the comment subcommand")
 	if err := subcommand.flagset.Parse(args); err != nil {
 		return err
 	}
 
-	subcommand.params["helpFlag"] = helpFlag
-	subcommand.params["ticketID"] = ticketID
-	subcommand.params["commentID"] = commentID
-	subcommand.params["comment"] = comment
-	subcommand.params["delete"] = delete
-	subcommand.params["debug"] = debugFlag
+	subcommand.params = make(map[string]interface{})
+	subcommand.params["helpFlag"] = subcommand.helpFlag
+	subcommand.params["ticketID"] = subcommand.ticketID
+	subcommand.params["commentID"] = subcommand.commentID
+	subcommand.params["comment"] = subcommand.comment
+	subcommand.params["delete"] = subcommand.delete
+	subcommand.params["debugFlag"] = subcommand.debugFlag
+
+	debug.DebugMessage(true, fmt.Sprintf("debugFlag: %t", subcommand.debugFlag))
 
 	if subcommand.helpFlag {
 		common.PrintVersion()
@@ -88,7 +84,7 @@ func (subcommand *SubcommandComment) Execute() {
 		subcommand.commentID,
 		subcommand.ticketID,
 		subcommand.delete,
-		subcommand.debug,
+		subcommand.debugFlag,
 	)
 
 	if err != nil {
@@ -122,5 +118,5 @@ func (subcommand *SubcommandComment) Parameters() map[string]interface{} {
 }
 
 func (subcommand *SubcommandComment) DebugFlag() bool {
-	return subcommand.debug
+	return subcommand.debugFlag
 }

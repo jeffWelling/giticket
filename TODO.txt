@@ -1,0 +1,6 @@
+- A user can init with an earlier version that doesn't setup filters.json,
+  upgrade giticket, and then get an error because it will try to list tickets
+while looking up a filter but filters.json won't exist.
+
+- Treat git branch setup changes as database changes with migrations, trigger
+  migration when thing is missing.

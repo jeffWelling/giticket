@@ -55,6 +55,9 @@ func ListTickets(thisRepo *git.Repository, branchName string, windowWidth int, f
 	if err != nil {
 		return "", err
 	}
+
+	// If the user is trying to set the preferred filter, but the filter name is
+	// empty, that's an error.
 	if filterName == "" && filterSet {
 		return "", fmt.Errorf("Cannot set preferred filter when no filter has been configured yet, create one with the filter subcommand.")
 	}

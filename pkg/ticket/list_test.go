@@ -83,7 +83,7 @@ func TestHandleList(t *testing.T) {
 		w := &strings.Builder{}
 
 		// list tickets
-		err := HandleList(testCase.debugFlag, testCase.branchName, 0, w)
+		err := HandleList(w, 0, testCase.branchName, "", false, testCase.debugFlag)
 		if err != nil {
 			t.Fatal(err)
 		}
