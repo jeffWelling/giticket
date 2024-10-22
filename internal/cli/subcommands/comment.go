@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/jeffwelling/giticket/pkg/common"
-	"github.com/jeffwelling/giticket/pkg/debug"
 	"github.com/jeffwelling/giticket/pkg/ticket"
 )
 
@@ -56,8 +55,6 @@ func (subcommand *SubcommandComment) InitFlags(args []string) error {
 	subcommand.params["comment"] = subcommand.comment
 	subcommand.params["delete"] = subcommand.delete
 	subcommand.params["debugFlag"] = subcommand.debugFlag
-
-	debug.DebugMessage(true, fmt.Sprintf("debugFlag: %t", subcommand.debugFlag))
 
 	if subcommand.helpFlag {
 		common.PrintVersion()
