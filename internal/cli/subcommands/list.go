@@ -50,7 +50,7 @@ func (subcommand *SubcommandList) InitFlags(args []string) error {
 
 	// If filterSet is true, then filter is required
 	if subcommand.filterSet && subcommand.filter == "" {
-		return fmt.Errorf("Filter name is required when using the --set-filter flag")
+		return fmt.Errorf("filter name is required when using the --set-filter flag")
 	}
 
 	subcommand.parameters["debugFlag"] = debugFlag

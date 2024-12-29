@@ -46,7 +46,7 @@ func ListTickets(thisRepo *git.Repository, branchName string, windowWidth int, f
 	var ticketsList []Ticket
 	ticketsList, err := GetListOfTickets(thisRepo, branchName, debugFlag)
 	if err != nil {
-		return "", fmt.Errorf("Unable to list tickets: %s", err) // TODO: err
+		return "", fmt.Errorf("unable to list tickets: %s", err) // TODO: err
 	}
 
 	// Sanity check that a filter has been set before attempting to set
@@ -59,7 +59,7 @@ func ListTickets(thisRepo *git.Repository, branchName string, windowWidth int, f
 	// If the user is trying to set the preferred filter, but the filter name is
 	// empty, that's an error.
 	if filterName == "" && filterSet {
-		return "", fmt.Errorf("Cannot set preferred filter when no filter has been configured yet, create one with the filter subcommand.")
+		return "", fmt.Errorf("cannot set preferred filter when no filter has been configured yet, create one with the filter subcommand")
 	}
 
 	// Filter tickets
@@ -155,46 +155,46 @@ func GetListOfTickets(thisRepo *git.Repository, branchName string, debugFlag boo
 	debug.DebugMessage(debugFlag, "Looking up branch: "+branchName)
 	branch, err := thisRepo.LookupBranch(branchName, git.BranchLocal)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to list tickets because there was an error looking up the branch: %s", err)
+		return nil, fmt.Errorf("unable to list tickets because there was an error looking up the branch: %s", err)
 	}
 
 	// Lookup the commit the branch references
 	debug.DebugMessage(debugFlag, "Looking up commit: "+branch.Target().String())
 	parentCommit, err := thisRepo.LookupCommit(branch.Target())
 	if err != nil {
-		return nil, fmt.Errorf("Unable to list tickets because there was an error looking up the commit: %s", err)
+		return nil, fmt.Errorf("unable to list tickets because there was an error looking up the commit: %s", err)
 	}
 
 	debug.DebugMessage(debugFlag, "looking up tree from parent commit, tree ID: "+parentCommit.TreeId().String())
 	parentCommitTree, err := parentCommit.Tree()
 	if err != nil {
-		return nil, fmt.Errorf("Unable to list tickets because there was an error looking up the tree of the parent commit: %s", err)
+		return nil, fmt.Errorf("unable to list tickets because there was an error looking up the tree of the parent commit: %s", err)
 	}
 	defer parentCommitTree.Free()
 
 	debug.DebugMessage(debugFlag, "looking up .giticket tree entry from parent commit: "+parentCommitTree.Id().String())
 	giticketTreeEntry, err := parentCommitTree.EntryByPath(".giticket")
 	if err != nil {
-		return nil, fmt.Errorf("Unable to list tickets because there was an error looking up the .giticket tree entry: %s", err)
+		return nil, fmt.Errorf("unable to list tickets because there was an error looking up the .giticket tree entry: %s", err)
 	}
 
 	debug.DebugMessage(debugFlag, "looking up giticketTree from ID: "+giticketTreeEntry.Id.String())
 	giticketTree, err := thisRepo.LookupTree(giticketTreeEntry.Id)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to list tickets because there was an error looking up the .giticket tree from the ID: %s", err)
+		return nil, fmt.Errorf("unable to list tickets because there was an error looking up the .giticket tree from the ID: %s", err)
 	}
 	defer giticketTree.Free()
 
 	debug.DebugMessage(debugFlag, "looking up tickets tree from .giticket tree: "+giticketTreeEntry.Id.String())
 	giticketTicketsTreeEntry, err := giticketTree.EntryByPath("tickets")
 	if err != nil {
-		return nil, fmt.Errorf("Unable to list tickets because there was an error looking up the .giticket/tickets tree entry: %s", err)
+		return nil, fmt.Errorf("unable to list tickets because there was an error looking up the .giticket/tickets tree entry: %s", err)
 	}
 
 	debug.DebugMessage(debugFlag, "looking up giticketTicketsTree from ID: "+giticketTicketsTreeEntry.Id.String())
 	giticketTicketsTree, err := thisRepo.LookupTree(giticketTicketsTreeEntry.Id)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to list tickets because there was an error looking up the .giticket/tickets tree from the ID: %s", err)
+		return nil, fmt.Errorf("unable to list tickets because there was an error looking up the .giticket/tickets tree from the ID: %s", err)
 	}
 	defer giticketTicketsTree.Free()
 
@@ -203,7 +203,7 @@ func GetListOfTickets(thisRepo *git.Repository, branchName string, debugFlag boo
 	err = giticketTicketsTree.Walk(func(name string, entry *git.TreeEntry) error {
 		ticketFile, err := thisRepo.LookupBlob(entry.Id)
 		if err != nil {
-			return fmt.Errorf("Error walking the tickets tree and looking up the entry ID: %s", err)
+			return fmt.Errorf("error walking the tickets tree and looking up the entry ID: %s", err)
 		}
 		defer ticketFile.Free()
 
@@ -211,14 +211,14 @@ func GetListOfTickets(thisRepo *git.Repository, branchName string, debugFlag boo
 		// Unmarshal the ticket which is yaml
 		err = yaml.Unmarshal(ticketFile.Contents(), &t)
 		if err != nil {
-			return fmt.Errorf("Error unmarshalling yaml ticket from file in tickets directory: %s", err)
+			return fmt.Errorf("error unmarshalling yaml ticket from file in tickets directory: %s", err)
 		}
 
 		ticketList = append(ticketList, t)
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("Error walking the tickets tree: %s", err)
+		return nil, fmt.Errorf("error walking the tickets tree: %s", err)
 	}
 
 	debug.DebugMessage(debugFlag, "Number of tickets: "+fmt.Sprint(len(ticketList)))

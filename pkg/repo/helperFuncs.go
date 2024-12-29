@@ -300,7 +300,7 @@ func CommentExists(
 	err = giticketTicketsSubTree.Walk(func(name string, entry *git.TreeEntry) error {
 		ticketFile, err := thisRepo.LookupBlob(entry.Id)
 		if err != nil {
-			return fmt.Errorf("Error walking the tickets tree and looking up the entry ID: %s", err)
+			return fmt.Errorf("error walking the tickets tree and looking up the entry ID: %s", err)
 		}
 		defer ticketFile.Free()
 
@@ -308,7 +308,7 @@ func CommentExists(
 		// Unmarshal the ticket which is yaml
 		err = yaml.Unmarshal(ticketFile.Contents(), &t)
 		if err != nil {
-			return fmt.Errorf("Error unmarshalling yaml ticket from file in tickets directory: %s", err)
+			return fmt.Errorf("error unmarshalling yaml ticket from file in tickets directory: %s", err)
 		}
 
 		// For each comment in the ticket
@@ -412,7 +412,7 @@ func openGitAndReturnGiticketThings(branchName string, debugFlag bool) (*git.Rep
 	// Get '.gititickets' subtree
 	giticketSubTreeEntry := tree.EntryByName(".giticket")
 	if giticketSubTreeEntry == nil {
-		return nil, nil, nil, nil, errors.New("Subtree '.giticket' not found")
+		return nil, nil, nil, nil, errors.New("subtree '.giticket' not found")
 	}
 	debug.DebugMessage(debugFlag, "Looked up tree entry for giticket: "+giticketSubTreeEntry.Id.String())
 
@@ -424,7 +424,7 @@ func openGitAndReturnGiticketThings(branchName string, debugFlag bool) (*git.Rep
 
 	giticketTicketsSubTreeEntry := giticketSubTree.EntryByName("tickets")
 	if giticketTicketsSubTreeEntry == nil {
-		return nil, nil, nil, nil, errors.New("Subtree 'tickets' not found")
+		return nil, nil, nil, nil, errors.New("subtree 'tickets' not found")
 	}
 	debug.DebugMessage(debugFlag, "Looked up giticket tickets tree entry: "+giticketTicketsSubTreeEntry.Id.String())
 

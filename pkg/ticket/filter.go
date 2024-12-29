@@ -81,7 +81,7 @@ func HandleFilterList(writer io.Writer, outputFormat string, debugFlag bool) err
 		// Return a helpful error if the error message is:
 		// the path 'filters.json' does not exist in the given tree
 		if err.Error() == "the path 'filters.json' does not exist in the given tree" {
-			return errors.New("There are no filters to list yet.")
+			return errors.New("there are no filters to list yet")
 		}
 
 		return err
@@ -306,7 +306,7 @@ func WriteFilters(filters *FilterList, commitMessage string, branchName string, 
 func checkFilterIsValid(filter string, name string, debugFlag bool) error {
 	debug.DebugMessage(debugFlag, "Checking filter validity for filter: "+name)
 	if filter == "" {
-		return errors.New("Error validating filter: Filter cannot be empty")
+		return errors.New("error validating filter: Filter cannot be empty")
 	}
 
 	// Create a set of test tickets to work with and turn them into JSON

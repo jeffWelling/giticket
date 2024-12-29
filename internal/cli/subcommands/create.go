@@ -177,7 +177,7 @@ func (subcommand *SubcommandCreate) InitFlags(args []string) error {
 	// Check for required parameters
 	if subcommand.title == "" {
 		ticket.PrintParameterMissing("title")
-		return fmt.Errorf("Cannot create a ticket without a title")
+		return fmt.Errorf("cannot create a ticket without a title")
 	}
 	return nil
 }
